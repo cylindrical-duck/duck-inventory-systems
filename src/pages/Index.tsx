@@ -3,8 +3,10 @@ import { InventoryStats } from "@/components/InventoryStats";
 import { InventoryTable, InventoryItem } from "@/components/InventoryTable";
 import { AddItemDialog } from "@/components/AddItemDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package } from "lucide-react";
+import { Package, ShoppingCart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const initialItems: InventoryItem[] = [
   {
@@ -55,6 +57,7 @@ const initialItems: InventoryItem[] = [
 ];
 
 const Index = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<InventoryItem[]>(initialItems);
 
   const handleAddItem = (newItem: Omit<InventoryItem, "id" | "lastUpdated">) => {
@@ -95,7 +98,17 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">CPG Inventory Management</p>
               </div>
             </div>
-            <AddItemDialog onAdd={handleAddItem} />
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/orders")}
+                className="gap-2"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Orders
+              </Button>
+              <AddItemDialog onAdd={handleAddItem} />
+            </div>
           </div>
         </div>
       </header>
