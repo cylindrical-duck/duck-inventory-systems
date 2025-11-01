@@ -81,7 +81,7 @@ const Orders = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              Order Management
+              DuckInventory Orders
             </h1>
             <p className="text-muted-foreground mt-2">
               Track and manage your customer orders

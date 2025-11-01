@@ -94,7 +94,7 @@ const Index = () => {
                 <Package className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">InventoryPro</h1>
+                <h1 className="text-2xl font-bold text-foreground">DuckInventory</h1>
                 <p className="text-sm text-muted-foreground">CPG Inventory Management</p>
               </div>
             </div>
