@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { InventoryStats } from "@/components/InventoryStats";
 import { InventoryTable, InventoryItem } from "@/components/InventoryTable";
 import { AddItemDialog } from "@/components/AddItemDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package, ShoppingCart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Package, ShoppingCart, LogOut } from "lucide-react";
 
 const initialItems: InventoryItem[] = [
   {
@@ -56,9 +57,15 @@ const initialItems: InventoryItem[] = [
   },
 ];
 
-const Index = () => {
+const Dashboard = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState<InventoryItem[]>(initialItems);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logged out successfully");
+    navigate("/");
+  };
 
   const handleAddItem = (newItem: Omit<InventoryItem, "id" | "lastUpdated">) => {
     const item: InventoryItem = {
@@ -108,6 +115,14 @@ const Index = () => {
                 Orders
               </Button>
               <AddItemDialog onAdd={handleAddItem} />
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
@@ -171,4 +186,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Dashboard;

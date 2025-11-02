@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Package } from "lucide-react";
+import { Package, LogOut } from "lucide-react";
 import OrderStats from "@/components/OrderStats";
 import OrderTable from "@/components/OrderTable";
 import AddOrderDialog from "@/components/AddOrderDialog";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface OrderItem {
   itemId: string;
@@ -75,6 +77,12 @@ const Orders = () => {
     );
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logged out successfully");
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto p-6 space-y-8">
@@ -90,7 +98,7 @@ const Orders = () => {
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/dashboard")}
               className="gap-2"
             >
               <Package className="h-4 w-4" />
@@ -101,6 +109,14 @@ const Orders = () => {
               onOpenChange={setIsAddDialogOpen}
               onAdd={handleAddOrder}
             />
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
           </div>
         </div>
 
