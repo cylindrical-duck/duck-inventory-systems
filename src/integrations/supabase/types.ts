@@ -14,9 +14,31 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          created_at: string | null
+          domain: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          domain: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: Database["public"]["Enums"]["item_category"]
+          company_id: string | null
           created_at: string | null
           id: string
           name: string
@@ -28,6 +50,7 @@ export type Database = {
         }
         Insert: {
           category: Database["public"]["Enums"]["item_category"]
+          company_id?: string | null
           created_at?: string | null
           id?: string
           name: string
@@ -39,6 +62,7 @@ export type Database = {
         }
         Update: {
           category?: Database["public"]["Enums"]["item_category"]
+          company_id?: string | null
           created_at?: string | null
           id?: string
           name?: string
@@ -48,7 +72,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -87,6 +119,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          company_id: string | null
           created_at: string | null
           customer_email: string
           customer_name: string
@@ -99,6 +132,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           customer_email: string
           customer_name: string
@@ -111,6 +145,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           customer_email?: string
           customer_name?: string
@@ -122,7 +157,41 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

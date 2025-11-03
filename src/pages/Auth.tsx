@@ -13,6 +13,8 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [companyDomain, setCompanyDomain] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -43,6 +45,10 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
+            data: {
+              company_name: companyName,
+              company_domain: companyDomain,
+            },
           },
         });
         if (error) throw error;
@@ -103,6 +109,32 @@ const Auth = () => {
                   minLength={6}
                 />
               </div>
+              {!isLogin && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Company Name</Label>
+                    <Input
+                      id="companyName"
+                      type="text"
+                      placeholder="Acme Corp"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyDomain">Company Domain</Label>
+                    <Input
+                      id="companyDomain"
+                      type="text"
+                      placeholder="acme.com"
+                      value={companyDomain}
+                      onChange={(e) => setCompanyDomain(e.target.value)}
+                      required
+                    />
+                  </div>
+                </>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
               </Button>

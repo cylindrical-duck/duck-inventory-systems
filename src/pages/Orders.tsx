@@ -32,16 +32,45 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchOrders();
+    fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (companyId) {
+      fetchOrders();
+    }
+  }, [companyId]);
+
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      setCompanyId(data.company_id);
+    } catch (error: any) {
+      toast.error("Failed to fetch profile");
+      console.error("Error fetching profile:", error);
+    }
+  };
+
   const fetchOrders = async () => {
+    if (!companyId) return;
+
     try {
       const { data: ordersData, error: ordersError } = await supabase
         .from("orders")
         .select("*, order_items(*)")
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false });
 
       if (ordersError) throw ordersError;
@@ -73,21 +102,23 @@ const Orders = () => {
   };
 
   const handleAddOrder = async (order: Order) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+    if (!companyId) {
+      toast.error("Company information not loaded");
+      return;
+    }
 
+    try {
       const { data: newOrder, error: orderError } = await supabase
         .from("orders")
         .insert({
-          user_id: user.id,
+          company_id: companyId,
           order_number: order.orderNumber,
           customer_name: order.contactName,
           customer_email: order.contactEmail,
           customer_phone: order.contactPhone,
           total_amount: order.totalAmount,
           status: order.status,
-        })
+        } as any)
         .select()
         .single();
 

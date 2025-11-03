@@ -13,16 +13,45 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [companyId, setCompanyId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchItems();
+    fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (companyId) {
+      fetchItems();
+    }
+  }, [companyId]);
+
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      setCompanyId(data.company_id);
+    } catch (error: any) {
+      toast.error("Failed to fetch profile");
+      console.error("Error fetching profile:", error);
+    }
+  };
+
   const fetchItems = async () => {
+    if (!companyId) return;
+    
     try {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -53,18 +82,20 @@ const Dashboard = () => {
   };
 
   const handleAddItem = async (newItem: Omit<InventoryItem, "id" | "lastUpdated">) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+    if (!companyId) {
+      toast.error("Company information not loaded");
+      return;
+    }
 
+    try {
       const { error } = await supabase.from("inventory_items").insert({
-        user_id: user.id,
+        company_id: companyId,
         name: newItem.name,
         category: newItem.category,
         quantity: newItem.quantity,
         unit: newItem.unit,
         reorder_level: newItem.reorderLevel,
-      });
+      } as any);
 
       if (error) throw error;
 
