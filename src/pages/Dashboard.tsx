@@ -9,57 +9,42 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Package, ShoppingCart, LogOut } from "lucide-react";
 
-const initialItems: InventoryItem[] = [
-  {
-    id: "1",
-    name: "All-purpose flour",
-    category: "raw",
-    quantity: 450,
-    unit: "kg",
-    reorderLevel: 100,
-    lastUpdated: "2025-10-28",
-  },
-  {
-    id: "2",
-    name: "Chocolate chips",
-    category: "raw",
-    quantity: 75,
-    unit: "kg",
-    reorderLevel: 50,
-    lastUpdated: "2025-10-29",
-  },
-  {
-    id: "3",
-    name: "Chocolate Chip Cookies",
-    category: "finished",
-    quantity: 1200,
-    unit: "units",
-    reorderLevel: 300,
-    lastUpdated: "2025-10-30",
-  },
-  {
-    id: "4",
-    name: "Sea Salt Caramel Cookies",
-    category: "finished",
-    quantity: 45,
-    unit: "units",
-    reorderLevel: 200,
-    lastUpdated: "2025-10-30",
-  },
-  {
-    id: "5",
-    name: "Glass bottles (500ml)",
-    category: "raw",
-    quantity: 0,
-    unit: "units",
-    reorderLevel: 500,
-    lastUpdated: "2025-10-25",
-  },
-];
-
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [items, setItems] = useState<InventoryItem[]>(initialItems);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const formattedItems: InventoryItem[] = (data || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category as "raw" | "finished",
+        quantity: item.quantity,
+        unit: item.unit,
+        reorderLevel: item.reorder_level,
+        lastUpdated: new Date(item.updated_at).toLocaleDateString(),
+      }));
+
+      setItems(formattedItems);
+    } catch (error: any) {
+      toast.error("Failed to load inventory items");
+      console.error("Error fetching items:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -67,23 +52,49 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handleAddItem = (newItem: Omit<InventoryItem, "id" | "lastUpdated">) => {
-    const item: InventoryItem = {
-      ...newItem,
-      id: Math.random().toString(36).substr(2, 9),
-      lastUpdated: new Date().toISOString().split("T")[0],
-    };
-    setItems([...items, item]);
-    toast.success("Item added successfully");
+  const handleAddItem = async (newItem: Omit<InventoryItem, "id" | "lastUpdated">) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase.from("inventory_items").insert({
+        user_id: user.id,
+        name: newItem.name,
+        category: newItem.category,
+        quantity: newItem.quantity,
+        unit: newItem.unit,
+        reorder_level: newItem.reorderLevel,
+      });
+
+      if (error) throw error;
+
+      toast.success("Item added successfully");
+      fetchItems();
+    } catch (error: any) {
+      toast.error("Failed to add item");
+      console.error("Error adding item:", error);
+    }
   };
 
   const handleEditItem = (item: InventoryItem) => {
     toast.info("Edit functionality coming soon!");
   };
 
-  const handleDeleteItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
-    toast.success("Item deleted successfully");
+  const handleDeleteItem = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("inventory_items")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Item deleted successfully");
+      fetchItems();
+    } catch (error: any) {
+      toast.error("Failed to delete item");
+      console.error("Error deleting item:", error);
+    }
   };
 
   const rawMaterials = items.filter((item) => item.category === "raw");

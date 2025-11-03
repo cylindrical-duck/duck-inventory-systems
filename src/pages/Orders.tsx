@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Package, LogOut } from "lucide-react";
 import OrderStats from "@/components/OrderStats";
@@ -29,52 +29,123 @@ export interface Order {
 
 const Orders = () => {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: "1",
-      orderNumber: "ORD-001",
-      contactName: "Sweet Treats Bakery",
-      contactEmail: "orders@sweettreats.com",
-      contactPhone: "(555) 123-4567",
-      items: [
-        { itemId: "1", itemName: "Chocolate Chip Cookies", quantity: 100, price: 2.5 },
-        { itemId: "2", itemName: "Sea Salt Caramel Cookies", quantity: 50, price: 3.0 },
-      ],
-      totalAmount: 400,
-      orderDate: new Date().toISOString(),
-      status: "completed",
-    },
-    {
-      id: "2",
-      orderNumber: "ORD-002",
-      contactName: "Gourmet Foods Co",
-      contactEmail: "purchasing@gourmetfoods.com",
-      contactPhone: "(555) 987-6543",
-      items: [
-        { itemId: "3", itemName: "Extra Virgin Olive Oil", quantity: 200, price: 15.0 },
-      ],
-      totalAmount: 3000,
-      orderDate: new Date(Date.now() - 86400000).toISOString(),
-      status: "processing",
-    },
-  ]);
-
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const handleAddOrder = (order: Order) => {
-    setOrders([order, ...orders]);
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .order("created_at", { ascending: false });
+
+      if (ordersError) throw ordersError;
+
+      const formattedOrders: Order[] = (ordersData || []).map((order) => ({
+        id: order.id,
+        orderNumber: order.order_number,
+        contactName: order.customer_name,
+        contactEmail: order.customer_email,
+        contactPhone: order.customer_phone,
+        items: (order.order_items || []).map((item: any) => ({
+          itemId: item.id,
+          itemName: item.item_name,
+          quantity: item.quantity,
+          price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+        })),
+        totalAmount: typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : order.total_amount,
+        orderDate: order.created_at,
+        status: order.status as Order["status"],
+      }));
+
+      setOrders(formattedOrders);
+    } catch (error: any) {
+      toast.error("Failed to load orders");
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteOrder = (id: string) => {
-    setOrders(orders.filter((order) => order.id !== id));
+  const handleAddOrder = async (order: Order) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: newOrder, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          order_number: order.orderNumber,
+          customer_name: order.contactName,
+          customer_email: order.contactEmail,
+          customer_phone: order.contactPhone,
+          total_amount: order.totalAmount,
+          status: order.status,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const orderItems = order.items.map((item) => ({
+        order_id: newOrder.id,
+        item_name: item.itemName,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      toast.success("Order created successfully");
+      fetchOrders();
+    } catch (error: any) {
+      toast.error("Failed to create order");
+      console.error("Error creating order:", error);
+    }
   };
 
-  const handleUpdateStatus = (id: string, status: Order["status"]) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === id ? { ...order, status } : order
-      )
-    );
+  const handleDeleteOrder = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Order deleted successfully");
+      fetchOrders();
+    } catch (error: any) {
+      toast.error("Failed to delete order");
+      console.error("Error deleting order:", error);
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: Order["status"]) => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Order status updated");
+      fetchOrders();
+    } catch (error: any) {
+      toast.error("Failed to update order status");
+      console.error("Error updating status:", error);
+    }
   };
 
   const handleLogout = async () => {
