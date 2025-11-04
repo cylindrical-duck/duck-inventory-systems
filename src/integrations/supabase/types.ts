@@ -35,11 +35,50 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_fields: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          field_name: string
+          field_order: number
+          field_type: string
+          id: string
+          table_name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          field_name: string
+          field_order?: number
+          field_type: string
+          id?: string
+          table_name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          field_name?: string
+          field_order?: number
+          field_type?: string
+          id?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_fields_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           category: Database["public"]["Enums"]["item_category"]
           company_id: string | null
           created_at: string | null
+          custom_data: Json | null
           id: string
           name: string
           quantity: number
@@ -52,6 +91,7 @@ export type Database = {
           category: Database["public"]["Enums"]["item_category"]
           company_id?: string | null
           created_at?: string | null
+          custom_data?: Json | null
           id?: string
           name: string
           quantity?: number
@@ -64,6 +104,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["item_category"]
           company_id?: string | null
           created_at?: string | null
+          custom_data?: Json | null
           id?: string
           name?: string
           quantity?: number
@@ -121,6 +162,7 @@ export type Database = {
         Row: {
           company_id: string | null
           created_at: string | null
+          custom_data: Json | null
           customer_email: string
           customer_name: string
           customer_phone: string
@@ -134,6 +176,7 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string | null
+          custom_data?: Json | null
           customer_email: string
           customer_name: string
           customer_phone: string
@@ -147,6 +190,7 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string | null
+          custom_data?: Json | null
           customer_email?: string
           customer_name?: string
           customer_phone?: string

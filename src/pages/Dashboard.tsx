@@ -7,7 +7,7 @@ import { AddItemDialog } from "@/components/AddItemDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package, ShoppingCart, LogOut } from "lucide-react";
+import { Package, ShoppingCart, LogOut, Settings } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -81,7 +81,7 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handleAddItem = async (newItem: Omit<InventoryItem, "id" | "lastUpdated">) => {
+  const handleAddItem = async (newItem: Omit<InventoryItem, "id" | "lastUpdated">, customData?: Record<string, any>) => {
     if (!companyId) {
       toast.error("Company information not loaded");
       return;
@@ -99,6 +99,7 @@ const Dashboard = () => {
         quantity: newItem.quantity,
         unit: newItem.unit,
         reorder_level: newItem.reorderLevel,
+        custom_data: customData || {},
       } as any);
 
       if (error) throw error;
@@ -159,6 +160,14 @@ const Dashboard = () => {
               >
                 <ShoppingCart className="h-4 w-4" />
                 Orders
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/properties")}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Properties
               </Button>
               <AddItemDialog onAdd={handleAddItem} />
               <Button

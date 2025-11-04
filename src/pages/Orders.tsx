@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Package, LogOut } from "lucide-react";
+import { Package, LogOut, Settings } from "lucide-react";
 import OrderStats from "@/components/OrderStats";
 import OrderTable from "@/components/OrderTable";
 import AddOrderDialog from "@/components/AddOrderDialog";
@@ -101,7 +101,7 @@ const Orders = () => {
     }
   };
 
-  const handleAddOrder = async (order: Order) => {
+  const handleAddOrder = async (order: Order, customData?: Record<string, any>) => {
     if (!companyId) {
       toast.error("Company information not loaded");
       return;
@@ -122,6 +122,7 @@ const Orders = () => {
           customer_phone: order.contactPhone,
           total_amount: order.totalAmount,
           status: order.status,
+          custom_data: customData || {},
         } as any)
         .select()
         .single();
@@ -209,6 +210,14 @@ const Orders = () => {
             >
               <Package className="h-4 w-4" />
               Inventory
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/properties")}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Properties
             </Button>
             <AddOrderDialog
               open={isAddDialogOpen}

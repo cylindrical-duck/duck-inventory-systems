@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,24 +9,52 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Order, OrderItem } from "@/pages/Orders";
+import { useCustomFields } from "@/hooks/useCustomFields";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AddOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (order: Order) => void;
+  onAdd: (order: Order, customData?: Record<string, any>) => void;
 }
 
 const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
   const { toast } = useToast();
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [customData, setCustomData] = useState<Record<string, any>>({});
   const [items, setItems] = useState<OrderItem[]>([
     { itemId: "", itemName: "", quantity: 0, price: 0 },
   ]);
+
+  const { fields } = useCustomFields(companyId, "orders");
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      if (data) setCompanyId(data.company_id);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
 
   const handleAddItem = () => {
     setItems([...items, { itemId: "", itemName: "", quantity: 0, price: 0 }]);
@@ -93,7 +121,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
       status: "pending",
     };
 
-    onAdd(newOrder);
+    onAdd(newOrder, customData);
     toast({
       title: "Order Created",
       description: `Order ${newOrder.orderNumber} has been created successfully.`,
@@ -103,8 +131,53 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     setContactName("");
     setContactEmail("");
     setContactPhone("");
+    setCustomData({});
     setItems([{ itemId: "", itemName: "", quantity: 0, price: 0 }]);
     onOpenChange(false);
+  };
+
+  const renderCustomField = (field: any) => {
+    const value = customData[field.field_name] || "";
+    
+    switch (field.field_type) {
+      case "text":
+        return (
+          <Input
+            value={value}
+            onChange={(e) => setCustomData({ ...customData, [field.field_name]: e.target.value })}
+            placeholder={`Enter ${field.field_name}`}
+          />
+        );
+      case "number":
+        return (
+          <Input
+            type="number"
+            value={value}
+            onChange={(e) => setCustomData({ ...customData, [field.field_name]: e.target.value })}
+            placeholder={`Enter ${field.field_name}`}
+          />
+        );
+      case "date":
+        return (
+          <Input
+            type="date"
+            value={value}
+            onChange={(e) => setCustomData({ ...customData, [field.field_name]: e.target.value })}
+          />
+        );
+      case "boolean":
+        return (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={value === true || value === "true"}
+              onCheckedChange={(checked) => setCustomData({ ...customData, [field.field_name]: checked })}
+            />
+            <span className="text-sm">Yes</span>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -230,6 +303,21 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
               </div>
             ))}
           </div>
+
+          {/* Custom Fields */}
+          {fields.length > 0 && (
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="font-semibold text-lg">Custom Fields</h3>
+              {fields.map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label htmlFor={field.field_name} className="capitalize">
+                    {field.field_name}
+                  </Label>
+                  {renderCustomField(field)}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-lg font-semibold">

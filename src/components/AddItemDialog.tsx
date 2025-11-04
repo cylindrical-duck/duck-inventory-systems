@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,15 +17,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus } from "lucide-react";
 import { InventoryItem } from "./InventoryTable";
+import { useCustomFields } from "@/hooks/useCustomFields";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AddItemDialogProps {
-  onAdd: (item: Omit<InventoryItem, "id" | "lastUpdated">) => void;
+  onAdd: (item: Omit<InventoryItem, "id" | "lastUpdated">, customData?: Record<string, any>) => void;
 }
 
 export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
   const [open, setOpen] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     category: "raw" as "raw" | "finished",
@@ -33,6 +37,30 @@ export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
     unit: "",
     reorderLevel: "",
   });
+  const [customData, setCustomData] = useState<Record<string, any>>({});
+  
+  const { fields } = useCustomFields(companyId, "inventory_items");
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      if (data) setCompanyId(data.company_id);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +70,7 @@ export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
       quantity: Number(formData.quantity),
       unit: formData.unit,
       reorderLevel: Number(formData.reorderLevel),
-    });
+    }, customData);
     setFormData({
       name: "",
       category: "raw",
@@ -50,7 +78,52 @@ export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
       unit: "",
       reorderLevel: "",
     });
+    setCustomData({});
     setOpen(false);
+  };
+
+  const renderCustomField = (field: any) => {
+    const value = customData[field.field_name] || "";
+    
+    switch (field.field_type) {
+      case "text":
+        return (
+          <Input
+            value={value}
+            onChange={(e) => setCustomData({ ...customData, [field.field_name]: e.target.value })}
+            placeholder={`Enter ${field.field_name}`}
+          />
+        );
+      case "number":
+        return (
+          <Input
+            type="number"
+            value={value}
+            onChange={(e) => setCustomData({ ...customData, [field.field_name]: e.target.value })}
+            placeholder={`Enter ${field.field_name}`}
+          />
+        );
+      case "date":
+        return (
+          <Input
+            type="date"
+            value={value}
+            onChange={(e) => setCustomData({ ...customData, [field.field_name]: e.target.value })}
+          />
+        );
+      case "boolean":
+        return (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={value === true || value === "true"}
+              onCheckedChange={(checked) => setCustomData({ ...customData, [field.field_name]: checked })}
+            />
+            <span className="text-sm">Yes</span>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -139,6 +212,21 @@ export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
               You'll be alerted when stock falls below this level
             </p>
           </div>
+
+          {/* Custom Fields */}
+          {fields.length > 0 && (
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-sm font-medium">Custom Fields</h3>
+              {fields.map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label htmlFor={field.field_name} className="capitalize">
+                    {field.field_name}
+                  </Label>
+                  {renderCustomField(field)}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
