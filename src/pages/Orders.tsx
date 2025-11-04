@@ -108,9 +108,13 @@ const Orders = () => {
     }
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       const { data: newOrder, error: orderError } = await supabase
         .from("orders")
         .insert({
+          user_id: user.id,
           company_id: companyId,
           order_number: order.orderNumber,
           customer_name: order.contactName,
