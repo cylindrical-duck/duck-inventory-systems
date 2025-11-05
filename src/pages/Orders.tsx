@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Package, LogOut, Settings } from "lucide-react";
+import { Package, LogOut, Settings, Truck } from "lucide-react";
 import OrderStats from "@/components/OrderStats";
 import OrderTable from "@/components/OrderTable";
 import AddOrderDialog from "@/components/AddOrderDialog";
@@ -210,6 +210,14 @@ const Orders = () => {
             >
               <Package className="h-4 w-4" />
               Inventory
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/shipping")}
+              className="gap-2"
+            >
+              <Truck className="h-4 w-4" />
+              Shipping
             </Button>
             <Button
               variant="outline"

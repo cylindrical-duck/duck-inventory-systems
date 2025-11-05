@@ -5,9 +5,10 @@ import { InventoryStats } from "@/components/InventoryStats";
 import { InventoryTable, InventoryItem } from "@/components/InventoryTable";
 import { AddItemDialog } from "@/components/AddItemDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PendingOrdersCard from "@/components/PendingOrdersCard";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package, ShoppingCart, LogOut, Settings } from "lucide-react";
+import { Package, ShoppingCart, LogOut, Settings, Truck } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -153,22 +154,30 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/orders")}
-                className="gap-2"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Orders
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/properties")}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                Properties
-              </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/orders")}
+              className="gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Orders
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/shipping")}
+              className="gap-2"
+            >
+              <Truck className="h-4 w-4" />
+              Shipping
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/properties")}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Properties
+            </Button>
               <AddItemDialog onAdd={handleAddItem} />
               <Button
                 variant="ghost"
@@ -193,6 +202,9 @@ const Dashboard = () => {
             finishedProducts={finishedProducts.length}
             lowStock={lowStockItems.length}
           />
+
+          {/* Pending Orders & Shipments */}
+          <PendingOrdersCard companyId={companyId} />
 
           {/* Inventory Table with Tabs */}
           <Tabs defaultValue="all" className="space-y-4">

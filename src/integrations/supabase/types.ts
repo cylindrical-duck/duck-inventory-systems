@@ -123,6 +123,50 @@ export type Database = {
           },
         ]
       }
+      inventory_transactions: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          inventory_item_id: string | null
+          notes: string | null
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          notes?: string | null
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          notes?: string | null
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type?: Database["public"]["Enums"]["transaction_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -237,6 +281,77 @@ export type Database = {
           },
         ]
       }
+      shipments: {
+        Row: {
+          carrier: string | null
+          company_id: string
+          created_at: string | null
+          custom_data: Json | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          recipient_email: string | null
+          recipient_name: string
+          recipient_phone: string | null
+          scheduled_date: string
+          shipment_number: string
+          shipment_type: Database["public"]["Enums"]["transaction_type"]
+          shipped_date: string | null
+          shipping_address: string | null
+          status: Database["public"]["Enums"]["shipment_status"]
+          tracking_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          carrier?: string | null
+          company_id: string
+          created_at?: string | null
+          custom_data?: Json | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          recipient_email?: string | null
+          recipient_name: string
+          recipient_phone?: string | null
+          scheduled_date: string
+          shipment_number: string
+          shipment_type?: Database["public"]["Enums"]["transaction_type"]
+          shipped_date?: string | null
+          shipping_address?: string | null
+          status?: Database["public"]["Enums"]["shipment_status"]
+          tracking_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          carrier?: string | null
+          company_id?: string
+          created_at?: string | null
+          custom_data?: Json | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string
+          recipient_phone?: string | null
+          scheduled_date?: string
+          shipment_number?: string
+          shipment_type?: Database["public"]["Enums"]["transaction_type"]
+          shipped_date?: string | null
+          shipping_address?: string | null
+          status?: Database["public"]["Enums"]["shipment_status"]
+          tracking_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -247,6 +362,15 @@ export type Database = {
     Enums: {
       item_category: "raw" | "finished"
       order_status: "pending" | "processing" | "completed" | "cancelled"
+      shipment_status: "scheduled" | "in_transit" | "delivered" | "cancelled"
+      transaction_type:
+        | "order"
+        | "shipment"
+        | "restock"
+        | "adjustment"
+        | "sample"
+        | "distributor_pickup"
+        | "store_delivery"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -376,6 +500,16 @@ export const Constants = {
     Enums: {
       item_category: ["raw", "finished"],
       order_status: ["pending", "processing", "completed", "cancelled"],
+      shipment_status: ["scheduled", "in_transit", "delivered", "cancelled"],
+      transaction_type: [
+        "order",
+        "shipment",
+        "restock",
+        "adjustment",
+        "sample",
+        "distributor_pickup",
+        "store_delivery",
+      ],
     },
   },
 } as const
