@@ -64,7 +64,8 @@ const Dashboard = () => {
         quantity: item.quantity,
         unit: item.unit,
         reorderLevel: item.reorder_level,
-        lastUpdated: new Date(item.updated_at).toLocaleDateString(),
+        lastUpdated: item.updated_at,
+        price: typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0,
       }));
 
       setItems(formattedItems);
@@ -100,6 +101,7 @@ const Dashboard = () => {
         quantity: newItem.quantity,
         unit: newItem.unit,
         reorder_level: newItem.reorderLevel,
+        price: newItem.price,
         custom_data: customData || {},
       } as any);
 

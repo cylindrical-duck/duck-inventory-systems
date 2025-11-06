@@ -36,6 +36,7 @@ export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
     quantity: "",
     unit: "",
     reorderLevel: "",
+    price: "",
   });
   const [customData, setCustomData] = useState<Record<string, any>>({});
   
@@ -70,6 +71,7 @@ export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
       quantity: Number(formData.quantity),
       unit: formData.unit,
       reorderLevel: Number(formData.reorderLevel),
+      price: Number(formData.price),
     }, customData);
     setFormData({
       name: "",
@@ -77,6 +79,7 @@ export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
       quantity: "",
       unit: "",
       reorderLevel: "",
+      price: "",
     });
     setCustomData({});
     setOpen(false);
@@ -211,6 +214,20 @@ export const AddItemDialog = ({ onAdd }: AddItemDialogProps) => {
             <p className="text-xs text-muted-foreground">
               You'll be alerted when stock falls below this level
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="price">Price per Unit</Label>
+            <Input
+              id="price"
+              type="number"
+              step="0.01"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              placeholder="0.00"
+              required
+              min="0"
+            />
           </div>
 
           {/* Custom Fields */}

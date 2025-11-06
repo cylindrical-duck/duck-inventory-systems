@@ -81,6 +81,7 @@ export type Database = {
           custom_data: Json | null
           id: string
           name: string
+          price: number | null
           quantity: number
           reorder_level: number
           unit: string
@@ -94,6 +95,7 @@ export type Database = {
           custom_data?: Json | null
           id?: string
           name: string
+          price?: number | null
           quantity?: number
           reorder_level?: number
           unit: string
@@ -107,6 +109,7 @@ export type Database = {
           custom_data?: Json | null
           id?: string
           name?: string
+          price?: number | null
           quantity?: number
           reorder_level?: number
           unit?: string
@@ -171,6 +174,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          inventory_item_id: string | null
           item_name: string
           order_id: string
           price: number
@@ -179,6 +183,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          inventory_item_id?: string | null
           item_name: string
           order_id: string
           price: number
@@ -187,12 +192,20 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          inventory_item_id?: string | null
           item_name?: string
           order_id?: string
           price?: number
           quantity?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "order_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id"]

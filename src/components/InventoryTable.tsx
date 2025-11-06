@@ -20,6 +20,7 @@ export interface InventoryItem {
   unit: string;
   reorderLevel: number;
   lastUpdated: string;
+  price: number;
 }
 
 interface InventoryTableProps {
@@ -62,6 +63,7 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
               <TableHead>Item Name</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Quantity</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Updated</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -70,7 +72,7 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
           <TableBody>
             {filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground h-32">
+                <TableCell colSpan={7} className="text-center text-muted-foreground h-32">
                   No items found
                 </TableCell>
               </TableRow>
@@ -88,6 +90,7 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
                     <TableCell>
                       {item.quantity} {item.unit}
                     </TableCell>
+                    <TableCell>${item.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge variant={status.variant}>
                         {status.label}

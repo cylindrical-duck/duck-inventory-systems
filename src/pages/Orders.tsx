@@ -111,6 +111,7 @@ const Orders = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Create the order
       const { data: newOrder, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -129,11 +130,13 @@ const Orders = () => {
 
       if (orderError) throw orderError;
 
+      // Insert order items with inventory_item_id
       const orderItems = order.items.map((item) => ({
         order_id: newOrder.id,
         item_name: item.itemName,
         quantity: item.quantity,
         price: item.price,
+        inventory_item_id: item.itemId,
       }));
 
       const { error: itemsError } = await supabase
@@ -142,7 +145,40 @@ const Orders = () => {
 
       if (itemsError) throw itemsError;
 
-      toast.success("Order created successfully");
+      // Reduce inventory quantities
+      for (const item of order.items) {
+        const { data: currentItem, error: fetchError } = await supabase
+          .from("inventory_items")
+          .select("quantity")
+          .eq("id", item.itemId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const newQuantity = currentItem.quantity - item.quantity;
+        
+        const { error: updateError } = await supabase
+          .from("inventory_items")
+          .update({ quantity: newQuantity })
+          .eq("id", item.itemId);
+
+        if (updateError) throw updateError;
+
+        // Create inventory transaction record
+        await supabase
+          .from("inventory_transactions")
+          .insert({
+            company_id: companyId,
+            inventory_item_id: item.itemId,
+            transaction_type: "order",
+            quantity: -item.quantity,
+            reference_id: newOrder.id,
+            reference_type: "order",
+            notes: `Order ${order.orderNumber} - ${order.contactName}`,
+          });
+      }
+
+      toast.success("Order created and inventory updated");
       fetchOrders();
     } catch (error: any) {
       toast.error("Failed to create order");
