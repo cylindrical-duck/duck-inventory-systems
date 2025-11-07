@@ -25,6 +25,11 @@ export interface Order {
   totalAmount: number;
   orderDate: string;
   status: "pending" | "processing" | "completed" | "cancelled";
+  needsShipping?: boolean;
+  shippingAddress?: string;
+  recipientName?: string;
+  recipientEmail?: string;
+  recipientPhone?: string;
 }
 
 const Orders = () => {
@@ -90,6 +95,11 @@ const Orders = () => {
         totalAmount: typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : order.total_amount,
         orderDate: order.created_at,
         status: order.status as Order["status"],
+        needsShipping: order.needs_shipping,
+        shippingAddress: order.shipping_address,
+        recipientName: order.recipient_name,
+        recipientEmail: order.recipient_email,
+        recipientPhone: order.recipient_phone,
       }));
 
       setOrders(formattedOrders);
@@ -124,6 +134,11 @@ const Orders = () => {
           total_amount: order.totalAmount,
           status: order.status,
           custom_data: customData || {},
+          needs_shipping: order.needsShipping || false,
+          shipping_address: order.shippingAddress,
+          recipient_name: order.recipientName,
+          recipient_email: order.recipientEmail,
+          recipient_phone: order.recipientPhone,
         } as any)
         .select()
         .single();
@@ -178,7 +193,28 @@ const Orders = () => {
           });
       }
 
-      toast.success("Order created and inventory updated");
+      // Create shipment if needed
+      if (order.needsShipping) {
+        const shipmentNumber = `SHP-${Date.now()}`;
+        const { error: shipmentError } = await supabase
+          .from("shipments")
+          .insert({
+            company_id: companyId,
+            order_id: newOrder.id,
+            shipment_number: shipmentNumber,
+            shipment_type: "shipment",
+            recipient_name: order.recipientName || order.contactName,
+            recipient_email: order.recipientEmail || order.contactEmail,
+            recipient_phone: order.recipientPhone || order.contactPhone,
+            shipping_address: order.shippingAddress,
+            scheduled_date: new Date().toISOString(),
+            status: "scheduled",
+          });
+
+        if (shipmentError) throw shipmentError;
+      }
+
+      toast.success(order.needsShipping ? "Order created, inventory updated, and shipment scheduled" : "Order created and inventory updated");
       fetchOrders();
     } catch (error: any) {
       toast.error("Failed to create order");

@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2 } from "lucide-react";
 import { Order } from "@/pages/Orders";
 import { useCustomFields } from "@/hooks/useCustomFields";
@@ -53,6 +54,13 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     price: number;
     availableQty: number;
   }>>([]);
+  const [needsShipping, setNeedsShipping] = useState(false);
+  const [shippingInfo, setShippingInfo] = useState({
+    recipientName: "",
+    recipientEmail: "",
+    recipientPhone: "",
+    shippingAddress: "",
+  });
   const [customData, setCustomData] = useState<Record<string, any>>({});
   
   const { fields } = useCustomFields(companyId, "orders");
@@ -166,6 +174,11 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     const totalAmount = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const orderNumber = `ORD-${Date.now()}`;
 
+    if (needsShipping && !shippingInfo.shippingAddress) {
+      toast.error("Please enter a shipping address");
+      return;
+    }
+
     const newOrder: Order = {
       id: crypto.randomUUID(),
       orderNumber,
@@ -181,6 +194,11 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
       totalAmount,
       orderDate: new Date().toISOString(),
       status: "pending",
+      needsShipping,
+      shippingAddress: needsShipping ? shippingInfo.shippingAddress : undefined,
+      recipientName: needsShipping ? (shippingInfo.recipientName || contactInfo.name) : undefined,
+      recipientEmail: needsShipping ? (shippingInfo.recipientEmail || contactInfo.email) : undefined,
+      recipientPhone: needsShipping ? (shippingInfo.recipientPhone || contactInfo.phone) : undefined,
     };
 
     onAdd(newOrder, customData);
@@ -188,6 +206,8 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     // Reset form
     setContactInfo({ name: "", email: "", phone: "" });
     setOrderItems([]);
+    setNeedsShipping(false);
+    setShippingInfo({ recipientName: "", recipientEmail: "", recipientPhone: "", shippingAddress: "" });
     setCustomData({});
     onOpenChange(false);
   };
@@ -355,6 +375,70 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
               <p className="text-sm text-muted-foreground text-center py-4">
                 No items added yet. Click "Add Item" to get started.
               </p>
+            )}
+          </div>
+
+          {/* Shipping Section */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="needsShipping">Needs Shipping</Label>
+                <p className="text-sm text-muted-foreground">
+                  Create a shipment for this order
+                </p>
+              </div>
+              <Switch
+                id="needsShipping"
+                checked={needsShipping}
+                onCheckedChange={setNeedsShipping}
+              />
+            </div>
+
+            {needsShipping && (
+              <div className="space-y-4 pl-4 border-l-2">
+                <h4 className="text-sm font-medium">Shipping Information</h4>
+                <div className="space-y-2">
+                  <Label htmlFor="shippingAddress">Shipping Address *</Label>
+                  <Input
+                    id="shippingAddress"
+                    value={shippingInfo.shippingAddress}
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, shippingAddress: e.target.value })}
+                    placeholder="123 Main St, City, State, ZIP"
+                    required={needsShipping}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientName">Recipient Name</Label>
+                    <Input
+                      id="recipientName"
+                      value={shippingInfo.recipientName}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, recipientName: e.target.value })}
+                      placeholder="Leave empty to use customer name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientEmail">Recipient Email</Label>
+                    <Input
+                      id="recipientEmail"
+                      type="email"
+                      value={shippingInfo.recipientEmail}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, recipientEmail: e.target.value })}
+                      placeholder="Leave empty to use customer email"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recipientPhone">Recipient Phone</Label>
+                  <Input
+                    id="recipientPhone"
+                    type="tel"
+                    value={shippingInfo.recipientPhone}
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, recipientPhone: e.target.value })}
+                    placeholder="Leave empty to use customer phone"
+                  />
+                </div>
+              </div>
             )}
           </div>
 

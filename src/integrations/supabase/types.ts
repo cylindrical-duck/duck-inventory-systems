@@ -224,7 +224,12 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id: string
+          needs_shipping: boolean | null
           order_number: string
+          recipient_email: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          shipping_address: string | null
           status: Database["public"]["Enums"]["order_status"]
           total_amount: number
           updated_at: string | null
@@ -238,7 +243,12 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id?: string
+          needs_shipping?: boolean | null
           order_number: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          shipping_address?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_amount: number
           updated_at?: string | null
@@ -252,7 +262,12 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           id?: string
+          needs_shipping?: boolean | null
           order_number?: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          shipping_address?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_amount?: number
           updated_at?: string | null
