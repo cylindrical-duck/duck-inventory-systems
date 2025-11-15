@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Package, LogOut, Settings, TrendingUp } from "lucide-react";
+import { Package, LogOut, Settings, TrendingUp, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -170,13 +170,13 @@ const Shipping = () => {
   const handleUpdateStatus = async (id: string, status: Shipment["status"]) => {
     try {
       const updateData: any = { status };
-      
+
       // If marking as in_transit and no shipped_date, set it
       if (status === "in_transit") {
         const shipment = shipments.find(s => s.id === id);
         if (!shipment?.shippedDate) {
           updateData.shipped_date = new Date().toISOString();
-          
+
           // Create inventory transactions for the items
           if (shipment?.orderId) {
             await createInventoryTransactions(shipment.orderId, id);
@@ -283,6 +283,14 @@ const Shipping = () => {
             >
               <TrendingUp className="h-4 w-4" />
               Orders
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => navigate("/shipping")}
+              className="gap-2"
+            >
+              <Truck className="h-4 w-4" />
+              Shipping
             </Button>
             <Button
               variant="outline"

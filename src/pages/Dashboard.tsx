@@ -8,13 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PendingOrdersCard from "@/components/PendingOrdersCard";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package, ShoppingCart, LogOut, Settings, Truck } from "lucide-react";
+import { Package, ShoppingCart, LogOut, Settings, Truck, TrendingUp } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("DuckInventory");
 
   useEffect(() => {
     fetchProfile();
@@ -26,37 +27,37 @@ const Dashboard = () => {
     }
   }, [companyId]);
 
+
   const fetchProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
+      if (user.user_metadata && user.user_metadata.company_name) {
+        setCompanyName(user.user_metadata.company_name);
+      }
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("company_id")
         .eq("id", user.id)
         .single();
-
-      if (error) throw error;
-      setCompanyId(data.company_id);
+      if (profileError) throw profileError;
+      setCompanyId(profileData.company_id);
     } catch (error: any) {
       toast.error("Failed to fetch profile");
       console.error("Error fetching profile:", error);
     }
-  };
+  }
+
 
   const fetchItems = async () => {
     if (!companyId) return;
-    
     try {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
         .eq("company_id", companyId)
         .order("created_at", { ascending: false });
-
       if (error) throw error;
-
       const formattedItems: InventoryItem[] = (data || []).map((item) => ({
         id: item.id,
         name: item.name,
@@ -67,7 +68,6 @@ const Dashboard = () => {
         lastUpdated: item.updated_at,
         price: typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0,
       }));
-
       setItems(formattedItems);
     } catch (error: any) {
       toast.error("Failed to load inventory items");
@@ -83,7 +83,8 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handleAddItem = async (newItem: Omit<InventoryItem, "id" | "lastUpdated">, customData?: Record<string, any>) => {
+  // --- THIS IS THE NEW "CREATE OR UPDATE" LOGIC ---
+  const handleItemSubmit = async (itemData: Omit<InventoryItem, "id" | "lastUpdated">, customData?: Record<string, any>) => {
     if (!companyId) {
       toast.error("Company information not loaded");
       return;
@@ -93,25 +94,72 @@ const Dashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("inventory_items").insert({
-        user_id: user.id,
-        company_id: companyId,
-        name: newItem.name,
-        category: newItem.category,
-        quantity: newItem.quantity,
-        unit: newItem.unit,
-        reorder_level: newItem.reorderLevel,
-        price: newItem.price,
-        custom_data: customData || {},
-      } as any);
+      // 1. Check if item already exists (case-insensitive)
+      const existingItem = items.find(
+        (item) => item.name.toLowerCase() === itemData.name.toLowerCase()
+      );
 
-      if (error) throw error;
+      if (existingItem) {
+        // --- UPDATE LOGIC ---
+        const newQuantity = existingItem.quantity + itemData.quantity;
 
-      toast.success("Item added successfully");
-      fetchItems();
+        const { error: updateError } = await supabase
+          .from("inventory_items")
+          .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
+          .eq("id", existingItem.id);
+
+        if (updateError) throw updateError;
+
+        // Log transaction for the restock
+        await supabase.from("inventory_transactions").insert({
+          company_id: companyId,
+          inventory_item_id: existingItem.id,
+          transaction_type: "restock",
+          quantity: itemData.quantity, // Log only the added amount
+          reference_type: "manual_restock",
+          notes: "Manual stock addition",
+        });
+
+        toast.success(`Stock updated for ${existingItem.name}`);
+
+      } else {
+        // --- CREATE LOGIC (Original Behavior) ---
+        const { data: newItem, error: insertError } = await supabase
+          .from("inventory_items")
+          .insert({
+            user_id: user.id,
+            company_id: companyId,
+            name: itemData.name,
+            category: itemData.category,
+            quantity: itemData.quantity,
+            unit: itemData.unit,
+            reorder_level: itemData.reorderLevel,
+            price: itemData.price,
+            custom_data: customData || {},
+          } as any)
+          .select() // <-- Added .select()
+          .single(); // <-- Added .single()
+
+        if (insertError) throw insertError;
+        if (!newItem) throw new Error("Failed to create item.");
+
+        // Log transaction for the initial stock
+        await supabase.from("inventory_transactions").insert({
+          company_id: companyId,
+          inventory_item_id: newItem.id,
+          transaction_type: "restock", // <-- CHANGED
+          quantity: newItem.quantity,
+          reference_type: "item_creation",
+          notes: "New item created", // This note clarifies it's an initial stock
+        });
+
+        toast.success("New item added successfully");
+      }
+
+      fetchItems(); // Refresh the table
     } catch (error: any) {
-      toast.error("Failed to add item");
-      console.error("Error adding item:", error);
+      toast.error("Failed to submit item");
+      console.error("Error submitting item:", error);
     }
   };
 
@@ -125,9 +173,7 @@ const Dashboard = () => {
         .from("inventory_items")
         .delete()
         .eq("id", id);
-
       if (error) throw error;
-
       toast.success("Item deleted successfully");
       fetchItems();
     } catch (error: any) {
@@ -151,36 +197,53 @@ const Dashboard = () => {
                 <Package className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">DuckInventory</h1>
-                <p className="text-sm text-muted-foreground">CPG Inventory Management</p>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                  {companyName}
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  CPG Inventory Management
+                </p>
               </div>
             </div>
+            {/* --- HEADER BUTTONS FIXED --- */}
             <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/orders")}
-              className="gap-2"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Orders
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/shipping")}
-              className="gap-2"
-            >
-              <Truck className="h-4 w-4" />
-              Shipping
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/properties")}
-              className="gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Properties
-            </Button>
-              <AddItemDialog onAdd={handleAddItem} />
+              <Button
+                variant="default" // <-- CHANGED: Set to default (or secondary) for active page
+                onClick={() => navigate("/dashboard")} // <-- CHANGED: Corrected route
+                className="gap-2"
+              >
+                <Package className="h-4 w-4" />
+                Inventory
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/orders")}
+                className="gap-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Orders
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/shipping")}
+                className="gap-2"
+              >
+                <Truck className="h-4 w-4" />
+                Shipping
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/properties")}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Properties
+              </Button>
+              {/* --- PASSING ITEMS TO DIALOG --- */}
+              <AddItemDialog
+                onAdd={handleItemSubmit} // <-- CHANGED: Using new handler
+                items={items} // <-- ADDED: Pass the items list
+              />
               <Button
                 variant="ghost"
                 onClick={handleLogout}

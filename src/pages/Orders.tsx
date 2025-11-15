@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Package, LogOut, Settings, Truck } from "lucide-react";
+import { Package, LogOut, Settings, Truck, TrendingUp } from "lucide-react";
 import OrderStats from "@/components/OrderStats";
 import OrderTable from "@/components/OrderTable";
 import AddOrderDialog from "@/components/AddOrderDialog";
@@ -38,6 +38,7 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("DuckInventory"); // <-- ADDED
 
   useEffect(() => {
     fetchProfile();
@@ -51,17 +52,24 @@ const Orders = () => {
 
   const fetchProfile = async () => {
     try {
+      // 1. Get user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
+      // 2. Get company name from metadata
+      if (user.user_metadata && user.user_metadata.company_name) { // <-- ADDED
+        setCompanyName(user.user_metadata.company_name); // <-- ADDED
+      }
+
+      // 3. Get company ID from profiles table
+      const { data: profileData, error: profileError } = await supabase // <-- CHANGED
         .from("profiles")
         .select("company_id")
         .eq("id", user.id)
         .single();
 
-      if (error) throw error;
-      setCompanyId(data.company_id);
+      if (profileError) throw profileError; // <-- CHANGED
+      setCompanyId(profileData.company_id); // <-- CHANGED
     } catch (error: any) {
       toast.error("Failed to fetch profile");
       console.error("Error fetching profile:", error);
@@ -171,7 +179,7 @@ const Orders = () => {
         if (fetchError) throw fetchError;
 
         const newQuantity = currentItem.quantity - item.quantity;
-        
+
         const { error: updateError } = await supabase
           .from("inventory_items")
           .update({ quantity: newQuantity })
@@ -268,7 +276,7 @@ const Orders = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              DuckInventory Orders
+              {companyName} Orders {/* <-- CHANGED */}
             </h1>
             <p className="text-muted-foreground mt-2">
               Track and manage your customer orders
@@ -282,6 +290,14 @@ const Orders = () => {
             >
               <Package className="h-4 w-4" />
               Inventory
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => navigate("/orders")}
+              className="gap-2"
+            >
+              <TrendingUp className="h-4 w-4" />
+              Orders
             </Button>
             <Button
               variant="outline"

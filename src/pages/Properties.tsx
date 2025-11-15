@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Plus, Package, ShoppingCart, LogOut } from "lucide-react";
+// --- Import added icons ---
+import { Trash2, Plus, Package, ShoppingCart, LogOut, Truck, Settings } from "lucide-react"; // <-- CHANGED
 import { useNavigate } from "react-router-dom";
 
 interface CustomField {
@@ -20,6 +21,7 @@ interface CustomField {
 const Properties = () => {
   const navigate = useNavigate();
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("DuckInventory"); // <-- ADDED
   const [inventoryFields, setInventoryFields] = useState<CustomField[]>([]);
   const [orderFields, setOrderFields] = useState<CustomField[]>([]);
   const [newField, setNewField] = useState({ name: "", type: "text" });
@@ -37,17 +39,24 @@ const Properties = () => {
 
   const fetchProfile = async () => {
     try {
+      // 1. Get user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
+      // 2. Get company name from metadata
+      if (user.user_metadata && user.user_metadata.company_name) { // <-- ADDED
+        setCompanyName(user.user_metadata.company_name); // <-- ADDED
+      }
+
+      // 3. Get company ID from profiles table
+      const { data: profileData, error: profileError } = await supabase // <-- CHANGED
         .from("profiles")
         .select("company_id")
         .eq("id", user.id)
         .single();
 
-      if (error) throw error;
-      setCompanyId(data.company_id);
+      if (profileError) throw profileError; // <-- CHANGED
+      setCompanyId(profileData.company_id); // <-- CHANGED
     } catch (error: any) {
       toast.error("Failed to fetch profile");
       console.error("Error fetching profile:", error);
@@ -169,12 +178,13 @@ const Properties = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              Custom Properties
+              {companyName} Properties {/* <-- CHANGED */}
             </h1>
             <p className="text-muted-foreground mt-2">
               Customize your inventory and order fields
             </p>
           </div>
+          {/* --- Standardized Header Buttons --- */}
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -191,6 +201,22 @@ const Properties = () => {
             >
               <ShoppingCart className="h-4 w-4" />
               Orders
+            </Button>
+            <Button // <-- ADDED
+              variant="outline"
+              onClick={() => navigate("/shipping")}
+              className="gap-2"
+            >
+              <Truck className="h-4 w-4" />
+              Shipping
+            </Button>
+            <Button // <-- ADDED
+              variant="secondary"
+              onClick={() => navigate("/properties")}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Properties
             </Button>
             <Button
               variant="ghost"

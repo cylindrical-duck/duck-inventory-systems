@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -11,7 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Edit, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
+// --- Interfaces ---
 export interface InventoryItem {
   id: string;
   name: string;
@@ -23,6 +26,12 @@ export interface InventoryItem {
   price: number;
 }
 
+export interface Shipment {
+  id: string;
+  status: "scheduled" | "in_transit" | "delivered" | "cancelled";
+  items?: Array<{ itemName: string; quantity: number }>;
+}
+
 interface InventoryTableProps {
   items: InventoryItem[];
   onEdit: (item: InventoryItem) => void;
@@ -31,7 +40,75 @@ interface InventoryTableProps {
 
 export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // --- Fetch Shipments on Mount ---
+  useEffect(() => {
+    fetchShipments();
+  }, []);
+
+  const fetchShipments = async () => {
+    try {
+      // Note: In a real app, ensure you filter by company_id here if needed
+      const { data: shipmentsData, error } = await supabase
+        .from("shipments")
+        .select(`
+          id,
+          status,
+          orders!shipments_order_id_fkey (
+            order_items (
+              item_name,
+              quantity
+            )
+          )
+        `);
+
+      if (error) throw error;
+
+      const formattedShipments: Shipment[] = (shipmentsData || []).map((shipment: any) => ({
+        id: shipment.id,
+        status: shipment.status,
+        items: shipment.orders?.order_items?.map((item: any) => ({
+          itemName: item.item_name,
+          quantity: item.quantity,
+        })) || [],
+      }));
+
+      setShipments(formattedShipments);
+    } catch (error: any) {
+      console.error("Error fetching shipments:", error);
+      toast.error("Failed to load shipment data for calculations");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Calculation Logic ---
+  const calculatePhysicalStock = (item: InventoryItem) => {
+    // 1. Start with the current database quantity
+    let physicalTotal = item.quantity;
+
+    // 2. Loop through all shipments
+    shipments.forEach((shipment) => {
+      // 3. Only look at 'scheduled' shipments
+      if (shipment.status === "scheduled" && shipment.items) {
+        // 4. Find items in this shipment that match the current inventory item
+        const matchingItems = shipment.items.filter(
+          (shipItem) => shipItem.itemName.toLowerCase() === item.name.toLowerCase()
+        );
+
+        // 5. Add their quantities to the total
+        matchingItems.forEach((match) => {
+          physicalTotal += match.quantity;
+        });
+      }
+    });
+
+    return physicalTotal;
+  };
+
+  // --- Filtering ---
   const filteredItems = items.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -62,7 +139,8 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
             <TableRow className="hover:bg-transparent border-border">
               <TableHead>Item Name</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Quantity</TableHead>
+              <TableHead>Available Qty</TableHead>
+              <TableHead className="bg-muted/30">Physical Inv.</TableHead> {/* Highlighted Column */}
               <TableHead>Price</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Updated</TableHead>
@@ -72,13 +150,15 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
           <TableBody>
             {filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground h-32">
+                <TableCell colSpan={8} className="text-center text-muted-foreground h-32">
                   No items found
                 </TableCell>
               </TableRow>
             ) : (
               filteredItems.map((item) => {
                 const status = getStockStatus(item.quantity, item.reorderLevel);
+                const physicalQty = calculatePhysicalStock(item); // Calculate here
+
                 return (
                   <TableRow key={item.id} className="border-border">
                     <TableCell className="font-medium">{item.name}</TableCell>
@@ -90,6 +170,16 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
                     <TableCell>
                       {item.quantity} {item.unit}
                     </TableCell>
+
+                    {/* Physical Inventory Column */}
+                    <TableCell className="bg-muted/30 font-semibold">
+                      {loading ? (
+                        <span className="text-muted-foreground text-xs">Calc...</span>
+                      ) : (
+                        `${physicalQty} ${item.unit}`
+                      )}
+                    </TableCell>
+
                     <TableCell>${item.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge variant={status.variant}>
