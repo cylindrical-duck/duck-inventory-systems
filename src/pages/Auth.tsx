@@ -39,21 +39,42 @@ const Auth = () => {
         if (error) throw error;
         toast.success("Logged in successfully!");
         navigate("/dashboard");
+
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: {
-              company_name: companyName,
-              company_domain: companyDomain,
+
+        // 1. Check if a company with this domain already exists
+        const { data: existingCompany, error: queryError } = await supabase
+          .from("companies") // Assuming you have a 'companies' table
+          .select("id")
+          .eq("domain", companyDomain) // Check against the domain field
+          .maybeSingle();
+
+        if (queryError) throw queryError;
+
+        if (existingCompany) {
+          // 2. If company EXISTS, block sign-up
+          throw new Error("A company with this domain already exists. Please ask an admin for an invite.");
+
+        } else {
+          // 3. If company DOES NOT exist, proceed with new admin sign-up
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/dashboard`,
+              data: {
+                company_name: companyName,
+                company_domain: companyDomain,
+                // set the role for the first user
+                // handled by a database trigger
+              },
             },
-          },
-        });
-        if (error) throw error;
-        toast.success("Account created! You can now log in.");
-        setIsLogin(true);
+          });
+          if (signUpError) throw signUpError;
+
+          //toast.success("Account created! You are the admin. You can now log in.");
+          setIsLogin(true);
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");

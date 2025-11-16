@@ -208,7 +208,7 @@ const Dashboard = () => {
             {/* --- HEADER BUTTONS FIXED --- */}
             <div className="flex gap-3">
               <Button
-                variant="default" // <-- CHANGED: Set to default (or secondary) for active page
+                variant="secondary"
                 onClick={() => navigate("/dashboard")} // <-- CHANGED: Corrected route
                 className="gap-2"
               >
@@ -241,8 +241,8 @@ const Dashboard = () => {
               </Button>
               {/* --- PASSING ITEMS TO DIALOG --- */}
               <AddItemDialog
-                onAdd={handleItemSubmit} // <-- CHANGED: Using new handler
-                items={items} // <-- ADDED: Pass the items list
+                onAdd={handleItemSubmit}
+                items={items}
               />
               <Button
                 variant="ghost"
@@ -251,6 +251,14 @@ const Dashboard = () => {
               >
                 <LogOut className="h-4 w-4" />
                 Logout
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/teammanagement")}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Team Management
               </Button>
             </div>
           </div>

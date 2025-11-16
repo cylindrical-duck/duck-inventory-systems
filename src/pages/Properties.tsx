@@ -21,7 +21,7 @@ interface CustomField {
 const Properties = () => {
   const navigate = useNavigate();
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string>("DuckInventory"); // <-- ADDED
+  const [companyName, setCompanyName] = useState<string>("DuckInventory");
   const [inventoryFields, setInventoryFields] = useState<CustomField[]>([]);
   const [orderFields, setOrderFields] = useState<CustomField[]>([]);
   const [newField, setNewField] = useState({ name: "", type: "text" });
