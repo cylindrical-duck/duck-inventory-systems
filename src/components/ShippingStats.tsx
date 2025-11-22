@@ -1,58 +1,91 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Truck, Clock, CheckCircle, Package } from "lucide-react";
 import { Shipment } from "@/pages/Shipping";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
 interface ShippingStatsProps {
   shipments: Shipment[];
 }
 
 const ShippingStats = ({ shipments }: ShippingStatsProps) => {
+  // --- 2. GET BRANDING COLORS ---
+  const { primaryColor, accentColor } = useBranding();
+
   const scheduled = shipments.filter(s => s.status === "scheduled").length;
   const inTransit = shipments.filter(s => s.status === "in_transit").length;
   const delivered = shipments.filter(s => s.status === "delivered").length;
   const total = shipments.length;
 
+  // --- 3. DEFINE STATS ARRAY AND COLORS (like OrderStats) ---
+  const stats = [
+    {
+      title: "Total Shipments",
+      value: total,
+      icon: Package,
+    },
+    {
+      title: "Scheduled",
+      value: scheduled,
+      icon: Clock,
+    },
+    {
+      title: "In Transit",
+      value: inTransit,
+      icon: Truck,
+    },
+    {
+      title: "Delivered",
+      value: delivered,
+      icon: CheckCircle,
+    },
+  ];
+
+  const mainColors = [primaryColor, accentColor, primaryColor, accentColor];
+  const gradients = [
+    `linear-gradient(to br, ${primaryColor}, ${accentColor})`,
+    `linear-gradient(to br, ${accentColor}, ${primaryColor})`,
+    `linear-gradient(to br, ${primaryColor}, ${accentColor})`,
+    `linear-gradient(to br, ${accentColor}, ${primaryColor})`,
+  ];
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Shipments</CardTitle>
-          <Package className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{total}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
-          <Clock className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{scheduled}</div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">In Transit</CardTitle>
-          <Truck className="h-4 w-4 text-yellow-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{inTransit}</div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Delivered</CardTitle>
-          <CheckCircle className="h-4 w-4 text-green-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{delivered}</div>
-        </CardContent>
-      </Card>
+    // --- 4. APPLY STYLING FROM ORDERSTATS ---
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat, index) => (
+        <Card
+          key={stat.title}
+          className="relative overflow-hidden border-primary/20 bg-card/50 backdrop-blur transition-all hover:shadow-lg hover:shadow-primary/20 hover:scale-105"
+          style={{ borderColor: `${mainColors[index]}` }} // 33 is ~20% opacity
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  {stat.title}
+                </p>
+                <p
+                  className="text-3xl font-bold mt-2 bg-gradient-to-r bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, hsl(var(--foreground)), ${mainColors[index]})`,
+                  }}
+                >
+                  {stat.value}
+                </p>
+              </div>
+              <div
+                className="p-3 rounded-lg"
+                style={{ background: gradients[index], opacity: 0.1 }}
+              >
+                <stat.icon className="h-6 w-6" />
+              </div>
+            </div>
+            <div
+              className="absolute bottom-0 left-0 h-1 w-full"
+              style={{ background: gradients[index] }}
+            />
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

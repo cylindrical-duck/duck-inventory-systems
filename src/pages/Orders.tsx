@@ -7,6 +7,7 @@ import AddOrderDialog from "@/components/AddOrderDialog";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
 export interface OrderItem {
   itemId: string;
@@ -34,11 +35,13 @@ export interface Order {
 
 const Orders = () => {
   const navigate = useNavigate();
+  // --- 2. GET BRANDING COLORS ---
+  const { primaryColor, accentColor } = useBranding();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string>("DuckInventory"); // <-- ADDED
+  const [companyName, setCompanyName] = useState<string>("DuckInventory");
 
   useEffect(() => {
     fetchProfile();
@@ -57,19 +60,19 @@ const Orders = () => {
       if (!user) throw new Error("Not authenticated");
 
       // 2. Get company name from metadata
-      if (user.user_metadata && user.user_metadata.company_name) { // <-- ADDED
-        setCompanyName(user.user_metadata.company_name); // <-- ADDED
+      if (user.user_metadata && user.user_metadata.company_name) {
+        setCompanyName(user.user_metadata.company_name);
       }
 
       // 3. Get company ID from profiles table
-      const { data: profileData, error: profileError } = await supabase // <-- CHANGED
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("company_id")
         .eq("id", user.id)
         .single();
 
-      if (profileError) throw profileError; // <-- CHANGED
-      setCompanyId(profileData.company_id); // <-- CHANGED
+      if (profileError) throw profileError;
+      setCompanyId(profileData.company_id);
     } catch (error: any) {
       toast.error("Failed to fetch profile");
       console.error("Error fetching profile:", error);
@@ -275,20 +278,27 @@ const Orders = () => {
       <div className="container mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              {companyName} Orders {/* <-- CHANGED */}
+            {/* --- 3. APPLY DYNAMIC GRADIENT --- */}
+            <h1
+              className="text-2xl font-bold bg-clip-text text-transparent"
+              style={{
+                backgroundImage: `linear-gradient(to right, var(--company-primary), var(--company-accent), var(--company-primary))`,
+              }}
+            >
+              {companyName} Orders
             </h1>
             <p className="text-muted-foreground mt-2">
               Track and manage your customer orders
             </p>
           </div>
           <div className="flex gap-3">
+            {/* --- 4. APPLY DYNAMIC ICON COLORS --- */}
             <Button
               variant="outline"
               onClick={() => navigate("/dashboard")}
               className="gap-2"
             >
-              <Package className="h-4 w-4" />
+              <Package className="h-4 w-4" style={{ color: primaryColor }} />
               Inventory
             </Button>
             <Button
@@ -296,7 +306,7 @@ const Orders = () => {
               onClick={() => navigate("/orders")}
               className="gap-2"
             >
-              <TrendingUp className="h-4 w-4" />
+              <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
               Orders
             </Button>
             <Button
@@ -304,7 +314,7 @@ const Orders = () => {
               onClick={() => navigate("/shipping")}
               className="gap-2"
             >
-              <Truck className="h-4 w-4" />
+              <Truck className="h-4 w-4" style={{ color: primaryColor }} />
               Shipping
             </Button>
             <Button
@@ -312,7 +322,7 @@ const Orders = () => {
               onClick={() => navigate("/properties")}
               className="gap-2"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-4 w-4" style={{ color: primaryColor }} />
               Properties
             </Button>
             <AddOrderDialog
@@ -325,7 +335,7 @@ const Orders = () => {
               onClick={handleLogout}
               className="gap-2"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4" style={{ color: primaryColor }} />
               Logout
             </Button>
           </div>

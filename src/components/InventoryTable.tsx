@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT THE HOOK
 
 // --- Interfaces ---
 export interface InventoryItem {
@@ -39,6 +40,7 @@ interface InventoryTableProps {
 }
 
 export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps) => {
+  const { primaryColor, accentColor } = useBranding(); // <-- 2. GET THE DYNAMIC COLOR
   const [searchQuery, setSearchQuery] = useState("");
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,7 +125,11 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* 3. APPLY DYNAMIC COLOR TO ICONS */}
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            style={{ color: primaryColor }}
+          />
           <Input
             placeholder="Search inventory..."
             value={searchQuery}
@@ -162,10 +168,18 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
                 return (
                   <TableRow key={item.id} className="border-border">
                     <TableCell className="font-medium">{item.name}</TableCell>
+                    {/* --- 4. APPLY DYNAMIC STYLING TO BADGE --- */}
                     <TableCell>
-                      <Badge variant={item.category === "raw" ? "secondary" : "default"}>
-                        {item.category === "raw" ? "Raw Material" : "Finished Product"}
-                      </Badge>
+                      {item.category === "raw" ? (
+                        <Badge className="text-primary-foreground" style={{ backgroundColor: accentColor }}>Raw Material</Badge>
+                      ) : (
+                        <Badge
+                          style={{ backgroundColor: primaryColor }}
+                          className="text-primary-foreground"
+                        >
+                          Finished Product
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       {item.quantity} {item.unit}
@@ -189,13 +203,14 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
                     <TableCell className="text-muted-foreground">{item.lastUpdated}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {/* 3. APPLY DYNAMIC COLOR TO ICONS */}
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => onEdit(item)}
                           className="h-8 w-8"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-4 w-4" style={{ color: primaryColor }} />
                         </Button>
                         <Button
                           variant="ghost"

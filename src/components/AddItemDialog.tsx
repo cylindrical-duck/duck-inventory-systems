@@ -32,11 +32,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Check, ChevronsUpDown } from "lucide-react";
-// Import InventoryItem from its definition. Assuming it's in a shared types file or Dashboard
-// If not, you might need to adjust this import path or redeclare the interface.
 import { InventoryItem } from "./InventoryTable"; // Adjust this path if needed
 import { useCustomFields } from "@/hooks/useCustomFields";
 import { supabase } from "@/integrations/supabase/client";
+import { useBranding } from "../context/BrandingContext"; // <-- Import hook
 
 // --- Define initial state for the form ---
 const initialFormData = {
@@ -50,10 +49,12 @@ const initialFormData = {
 // --- Update Props to accept the items list ---
 interface AddItemDialogProps {
   onAdd: (item: Omit<InventoryItem, "id" | "lastUpdated">, customData?: Record<string, any>) => void;
-  items: InventoryItem[]; // <-- ADDED
+  items: InventoryItem[];
 }
 
-export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- ADDED items
+export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => {
+  // --- 1. Get both primaryColor and accentColor ---
+  const { primaryColor, accentColor } = useBranding();
   const [open, setOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
 
@@ -118,8 +119,6 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
         price: String(existingItem.price),
       });
       setIsExistingItem(true);
-      // Note: We don't load customData for existing items yet,
-      // as we are just adding stock.
     } else {
       // Item is NEW: Reset form to defaults
       setFormData(initialFormData);
@@ -131,7 +130,7 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAdd({
-      name: selectedName, // <-- Use selectedName
+      name: selectedName,
       category: formData.category,
       quantity: Number(formData.quantity),
       unit: formData.unit,
@@ -142,8 +141,6 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
     resetForm();
     setOpen(false);
   };
-
-  // Inside your AddItemDialog component, paste this full function definition:
 
   const renderCustomField = (field: any) => {
     const value = customData[field.field_name] || "";
@@ -185,21 +182,27 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
           </div>
         );
       default:
-        return null; // <-- Make sure it returns null by default
+        return null;
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}> {/* <-- Use new handler */}
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+        {/* --- 2. Add hover events and keep style --- */}
+        <Button
+          style={{ backgroundColor: primaryColor }}
+          className="text-primary-foreground"
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = accentColor)}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+        >
+          {/* This icon inherits text-primary-foreground (white) and should stay that way */}
           <Plus className="mr-2 h-4 w-4" />
           Add Item
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          {/* --- Dynamic Title --- */}
           <DialogTitle>
             {isExistingItem ? "Add Stock to Existing Item" : "Add New Inventory Item"}
           </DialogTitle>
@@ -212,7 +215,6 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Item Name</Label>
-            {/* --- REPLACED INPUT WITH COMBOBOX --- */}
             <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -222,14 +224,18 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
                   className="w-full justify-between font-normal"
                 >
                   {selectedName || "Select item or type new..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  {/* --- 3. Style this icon with primaryColor --- */}
+                  <ChevronsUpDown
+                    className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                    style={{ color: primaryColor }}
+                  />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                 <Command>
                   <CommandInput
                     placeholder="Search item or type new..."
-                    onValueChange={(search) => setSelectedName(search)} // <-- Update name as user types
+                    onValueChange={(search) => setSelectedName(search)}
                   />
                   <CommandEmpty>
                     <Button
@@ -253,7 +259,9 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
                             handleNameSelect(currentValue);
                           }}
                         >
+                          {/* --- 3. Style this icon with primaryColor --- */}
                           <Check
+                            style={{ color: primaryColor }}
                             className={`mr-2 h-4 w-4 ${selectedName.toLowerCase() === item.name.toLowerCase()
                               ? "opacity-100"
                               : "opacity-0"
@@ -276,7 +284,7 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
               onValueChange={(value: "raw" | "finished") =>
                 setFormData({ ...formData, category: value })
               }
-              disabled={isExistingItem} // <-- ADDED
+              disabled={isExistingItem}
             >
               <SelectTrigger id="category">
                 <SelectValue />
@@ -291,7 +299,7 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quantity">
-                {isExistingItem ? "Quantity to Add" : "Quantity"} {/* <-- Dynamic Label */}
+                {isExistingItem ? "Quantity to Add" : "Quantity"}
               </Label>
               <Input
                 id="quantity"
@@ -312,7 +320,7 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 placeholder="kg, lbs, units"
                 required
-                disabled={isExistingItem} // <-- ADDED
+                disabled={isExistingItem}
               />
             </div>
           </div>
@@ -327,7 +335,7 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
               placeholder="20"
               required
               min="0"
-              disabled={isExistingItem} // <-- ADDED
+              disabled={isExistingItem}
             />
           </div>
 
@@ -342,11 +350,10 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
               placeholder="0.00"
               required
               min="0"
-              disabled={isExistingItem} // <-- ADDED
+              disabled={isExistingItem}
             />
           </div>
 
-          {/* Custom Fields - only show for NEW items */}
           {!isExistingItem && fields.length > 0 && (
             <div className="space-y-4 pt-4 border-t">
               <h3 className="text-sm font-medium">Custom Fields</h3>
@@ -365,12 +372,19 @@ export const AddItemDialog = ({ onAdd, items }: AddItemDialogProps) => { // <-- 
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
+            {/* --- 2. Add hover events and keep style --- */}
             <Button
               type="submit"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={!selectedName || !formData.quantity} // <-- Disable if no name or qty
+              style={{ backgroundColor: primaryColor }}
+              className="text-primary-foreground"
+              disabled={!selectedName || !formData.quantity}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.backgroundColor = accentColor;
+                }
+              }}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
             >
-              {/* --- Dynamic Button Text --- */}
               {isExistingItem ? "Add Stock" : "Add New Item"}
             </Button>
           </div>

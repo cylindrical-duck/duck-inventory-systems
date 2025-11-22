@@ -8,10 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PendingOrdersCard from "@/components/PendingOrdersCard";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package, ShoppingCart, LogOut, Settings, Truck, TrendingUp } from "lucide-react";
+import { Package, LogOut, Settings, Truck, TrendingUp, UsersRound } from "lucide-react";
+import { useBranding } from "../context/BrandingContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { primaryColor, accentColor, reloadBranding } = useBranding();
+
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -26,7 +29,6 @@ const Dashboard = () => {
       fetchItems();
     }
   }, [companyId]);
-
 
   const fetchProfile = async () => {
     try {
@@ -46,8 +48,7 @@ const Dashboard = () => {
       toast.error("Failed to fetch profile");
       console.error("Error fetching profile:", error);
     }
-  }
-
+  };
 
   const fetchItems = async () => {
     if (!companyId) return;
@@ -83,7 +84,6 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  // --- THIS IS THE NEW "CREATE OR UPDATE" LOGIC ---
   const handleItemSubmit = async (itemData: Omit<InventoryItem, "id" | "lastUpdated">, customData?: Record<string, any>) => {
     if (!companyId) {
       toast.error("Company information not loaded");
@@ -94,13 +94,11 @@ const Dashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // 1. Check if item already exists (case-insensitive)
       const existingItem = items.find(
         (item) => item.name.toLowerCase() === itemData.name.toLowerCase()
       );
 
       if (existingItem) {
-        // --- UPDATE LOGIC ---
         const newQuantity = existingItem.quantity + itemData.quantity;
 
         const { error: updateError } = await supabase
@@ -110,12 +108,11 @@ const Dashboard = () => {
 
         if (updateError) throw updateError;
 
-        // Log transaction for the restock
         await supabase.from("inventory_transactions").insert({
           company_id: companyId,
           inventory_item_id: existingItem.id,
           transaction_type: "restock",
-          quantity: itemData.quantity, // Log only the added amount
+          quantity: itemData.quantity,
           reference_type: "manual_restock",
           notes: "Manual stock addition",
         });
@@ -123,7 +120,6 @@ const Dashboard = () => {
         toast.success(`Stock updated for ${existingItem.name}`);
 
       } else {
-        // --- CREATE LOGIC (Original Behavior) ---
         const { data: newItem, error: insertError } = await supabase
           .from("inventory_items")
           .insert({
@@ -137,26 +133,25 @@ const Dashboard = () => {
             price: itemData.price,
             custom_data: customData || {},
           } as any)
-          .select() // <-- Added .select()
-          .single(); // <-- Added .single()
+          .select()
+          .single();
 
         if (insertError) throw insertError;
         if (!newItem) throw new Error("Failed to create item.");
 
-        // Log transaction for the initial stock
         await supabase.from("inventory_transactions").insert({
           company_id: companyId,
           inventory_item_id: newItem.id,
-          transaction_type: "restock", // <-- CHANGED
+          transaction_type: "restock",
           quantity: newItem.quantity,
           reference_type: "item_creation",
-          notes: "New item created", // This note clarifies it's an initial stock
+          notes: "New item created",
         });
 
         toast.success("New item added successfully");
       }
 
-      fetchItems(); // Refresh the table
+      fetchItems();
     } catch (error: any) {
       toast.error("Failed to submit item");
       console.error("Error submitting item:", error);
@@ -188,87 +183,82 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card shadow-[var(--shadow-soft)]">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80">
-                <Package className="h-6 w-6 text-primary-foreground" />
+              {/* ICON BOX WITH BRAND COLORS */}
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-lg"
+                style={{
+                  background: `linear-gradient(to bottom right, var(--company-primary), var(--company-primary))`
+                }}
+              >
+                <Package className="h-6 w-6 text-white" />
               </div>
+
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                {/* COMPANY TITLE WITH BRANDING GRADIENT */}
+                <h1
+                  className="text-2xl font-bold bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, var(--company-primary), var(--company-accent), var(--company-primary))`
+                  }}
+                >
                   {companyName}
                 </h1>
+
                 <p className="text-muted-foreground mt-2">
                   CPG Inventory Management
                 </p>
               </div>
             </div>
-            {/* --- HEADER BUTTONS FIXED --- */}
+
             <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => navigate("/dashboard")} // <-- CHANGED: Corrected route
-                className="gap-2"
-              >
-                <Package className="h-4 w-4" />
+              <Button variant="secondary" onClick={() => navigate("/dashboard")} className="gap-2">
+                <Package className="h-4 w-4" style={{ color: primaryColor }} />
                 Inventory
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/orders")}
-                className="gap-2"
-              >
-                <TrendingUp className="h-4 w-4" />
+
+              <Button variant="outline" onClick={() => navigate("/orders")} className="gap-2">
+                <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
                 Orders
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/shipping")}
-                className="gap-2"
-              >
-                <Truck className="h-4 w-4" />
+
+              <Button variant="outline" onClick={() => navigate("/shipping")} className="gap-2">
+                <Truck className="h-4 w-4" style={{ color: primaryColor }} />
                 Shipping
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/properties")}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
+
+              <Button variant="outline" onClick={() => navigate("/properties")} className="gap-2">
+                <Settings className="h-4 w-4" style={{ color: primaryColor }} />
                 Properties
               </Button>
-              {/* --- PASSING ITEMS TO DIALOG --- */}
-              <AddItemDialog
-                onAdd={handleItemSubmit}
-                items={items}
-              />
-              <Button
-                variant="ghost"
-                onClick={handleLogout}
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
+
+              <AddItemDialog onAdd={handleItemSubmit} items={items} />
+
               <Button
                 variant="outline"
                 onClick={() => navigate("/teammanagement")}
                 className="gap-2"
               >
-                <Settings className="h-4 w-4" />
+                <UsersRound className="h-4 w-4" />
                 Team Management
               </Button>
+
+              <Button variant="ghost" onClick={handleLogout} className="gap-2">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+
+
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-8">
-          {/* Stats */}
           <InventoryStats
             totalItems={items.length}
             rawMaterials={rawMaterials.length}
@@ -276,12 +266,15 @@ const Dashboard = () => {
             lowStock={lowStockItems.length}
           />
 
-          {/* Pending Orders & Shipments */}
           <PendingOrdersCard companyId={companyId} />
 
-          {/* Inventory Table with Tabs */}
           <Tabs defaultValue="all" className="space-y-4">
-            <TabsList className="bg-muted">
+            <TabsList
+              className="bg-muted"
+              style={{
+                borderColor: "var(--company-primary)"
+              }}
+            >
               <TabsTrigger value="all">All Items</TabsTrigger>
               <TabsTrigger value="raw">Raw Materials</TabsTrigger>
               <TabsTrigger value="finished">Finished Products</TabsTrigger>
@@ -289,35 +282,19 @@ const Dashboard = () => {
             </TabsList>
 
             <TabsContent value="all" className="space-y-4">
-              <InventoryTable
-                items={items}
-                onEdit={handleEditItem}
-                onDelete={handleDeleteItem}
-              />
+              <InventoryTable items={items} onEdit={handleEditItem} onDelete={handleDeleteItem} />
             </TabsContent>
 
             <TabsContent value="raw" className="space-y-4">
-              <InventoryTable
-                items={rawMaterials}
-                onEdit={handleEditItem}
-                onDelete={handleDeleteItem}
-              />
+              <InventoryTable items={rawMaterials} onEdit={handleEditItem} onDelete={handleDeleteItem} />
             </TabsContent>
 
             <TabsContent value="finished" className="space-y-4">
-              <InventoryTable
-                items={finishedProducts}
-                onEdit={handleEditItem}
-                onDelete={handleDeleteItem}
-              />
+              <InventoryTable items={finishedProducts} onEdit={handleEditItem} onDelete={handleDeleteItem} />
             </TabsContent>
 
             <TabsContent value="lowstock" className="space-y-4">
-              <InventoryTable
-                items={lowStockItems}
-                onEdit={handleEditItem}
-                onDelete={handleDeleteItem}
-              />
+              <InventoryTable items={lowStockItems} onEdit={handleEditItem} onDelete={handleDeleteItem} />
             </TabsContent>
           </Tabs>
         </div>

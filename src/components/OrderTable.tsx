@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
 interface OrderTableProps {
   orders: Order[];
@@ -33,6 +34,9 @@ interface OrderTableProps {
 }
 
 const OrderTable = ({ orders, onDelete, onUpdateStatus }: OrderTableProps) => {
+  // --- 2. GET BRANDING COLOR ---
+  const { primaryColor } = useBranding();
+
   const getStatusVariant = (status: Order["status"]) => {
     switch (status) {
       case "completed":
@@ -40,19 +44,27 @@ const OrderTable = ({ orders, onDelete, onUpdateStatus }: OrderTableProps) => {
       case "processing":
         return "warning";
       case "pending":
-        return "default";
+        return "secondary"; // Use secondary as a fallback, we'll style 'pending' manually
       case "cancelled":
         return "destructive";
       default:
-        return "default";
+        return "secondary";
     }
   };
 
   return (
-    <Card className="border-primary/20 bg-card/50 backdrop-blur">
+    // --- 3. APPLY DYNAMIC BORDER COLOR ---
+    <Card
+      className="bg-card/50 backdrop-blur"
+      style={{ borderColor: `${primaryColor}33` }} // 33 is ~20% opacity
+    >
       <Table>
         <TableHeader>
-          <TableRow className="border-primary/20 hover:bg-primary/5">
+          {/* 3. APPLY DYNAMIC BORDER COLOR (removed hover) */}
+          <TableRow
+            className="hover:bg-muted-foreground/10" // Using neutral hover
+            style={{ borderColor: `${primaryColor}33` }}
+          >
             <TableHead>Order #</TableHead>
             <TableHead>Contact</TableHead>
             <TableHead>Email</TableHead>
@@ -68,7 +80,8 @@ const OrderTable = ({ orders, onDelete, onUpdateStatus }: OrderTableProps) => {
           {orders.map((order) => (
             <TableRow
               key={order.id}
-              className="border-primary/10 hover:bg-primary/5"
+              className="hover:bg-muted-foreground/10" // Using neutral hover
+              style={{ borderColor: `${primaryColor}1A` }} // 1A is ~10% opacity
             >
               <TableCell className="font-medium">{order.orderNumber}</TableCell>
               <TableCell>{order.contactName}</TableCell>
@@ -82,7 +95,8 @@ const OrderTable = ({ orders, onDelete, onUpdateStatus }: OrderTableProps) => {
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-2">
-                      <Eye className="h-4 w-4" />
+                      {/* --- 4. APPLY DYNAMIC ICON COLOR --- */}
+                      <Eye className="h-4 w-4" style={{ color: primaryColor }} />
                       {order.items.length} item{order.items.length !== 1 ? "s" : ""}
                     </Button>
                   </DialogTrigger>
@@ -126,14 +140,30 @@ const OrderTable = ({ orders, onDelete, onUpdateStatus }: OrderTableProps) => {
                 >
                   <SelectTrigger className="w-[140px]">
                     <SelectValue>
-                      <Badge variant={getStatusVariant(order.status)}>
-                        {order.status}
-                      </Badge>
+                      {/* --- 5. DYNAMICALLY STYLE PENDING BADGE --- */}
+                      {order.status === "pending" ? (
+                        <Badge
+                          style={{ backgroundColor: primaryColor }}
+                          className="text-primary-foreground"
+                        >
+                          Pending
+                        </Badge>
+                      ) : (
+                        <Badge variant={getStatusVariant(order.status)}>
+                          {order.status}
+                        </Badge>
+                      )}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
+                    {/* --- 5. DYNAMICALLY STYLE PENDING BADGE --- */}
                     <SelectItem value="pending">
-                      <Badge variant="default">Pending</Badge>
+                      <Badge
+                        style={{ backgroundColor: primaryColor }}
+                        className="text-primary-foreground"
+                      >
+                        Pending
+                      </Badge>
                     </SelectItem>
                     <SelectItem value="processing">
                       <Badge variant="warning">Processing</Badge>

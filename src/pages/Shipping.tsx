@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import ShippingStats from "@/components/ShippingStats";
 import ShippingTable from "@/components/ShippingTable";
 import AddShipmentDialog from "@/components/AddShipmentDialog";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
 export interface Shipment {
   id: string;
@@ -29,6 +30,8 @@ export interface Shipment {
 
 const Shipping = () => {
   const navigate = useNavigate();
+  // --- 2. GET BRANDING COLORS ---
+  const { primaryColor, accentColor } = useBranding();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -260,7 +263,13 @@ const Shipping = () => {
       <div className="container mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            {/* --- 3. APPLY DYNAMIC GRADIENT --- */}
+            <h1
+              className="text-2xl font-bold bg-clip-text text-transparent"
+              style={{
+                backgroundImage: `linear-gradient(to right, var(--company-primary), var(--company-accent), var(--company-primary))`,
+              }}
+            >
               Shipping Schedule
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -268,12 +277,13 @@ const Shipping = () => {
             </p>
           </div>
           <div className="flex gap-3">
+            {/* --- 4. APPLY DYNAMIC ICON COLORS --- */}
             <Button
               variant="outline"
               onClick={() => navigate("/dashboard")}
               className="gap-2"
             >
-              <Package className="h-4 w-4" />
+              <Package className="h-4 w-4" style={{ color: primaryColor }} />
               Inventory
             </Button>
             <Button
@@ -281,7 +291,7 @@ const Shipping = () => {
               onClick={() => navigate("/orders")}
               className="gap-2"
             >
-              <TrendingUp className="h-4 w-4" />
+              <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
               Orders
             </Button>
             <Button
@@ -289,7 +299,7 @@ const Shipping = () => {
               onClick={() => navigate("/shipping")}
               className="gap-2"
             >
-              <Truck className="h-4 w-4" />
+              <Truck className="h-4 w-4" style={{ color: primaryColor }} />
               Shipping
             </Button>
             <Button
@@ -297,7 +307,7 @@ const Shipping = () => {
               onClick={() => navigate("/properties")}
               className="gap-2"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-4 w-4" style={{ color: primaryColor }} />
               Properties
             </Button>
             <AddShipmentDialog
@@ -311,7 +321,7 @@ const Shipping = () => {
               onClick={handleLogout}
               className="gap-2"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4" style={{ color: primaryColor }} />
               Logout
             </Button>
           </div>

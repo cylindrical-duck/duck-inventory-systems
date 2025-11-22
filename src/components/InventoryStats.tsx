@@ -1,5 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Package, Boxes, AlertTriangle, TrendingUp } from "lucide-react";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
 interface InventoryStatsProps {
   totalItems: number;
@@ -14,59 +15,87 @@ export const InventoryStats = ({
   finishedProducts,
   lowStock,
 }: InventoryStatsProps) => {
+  // --- 2. GET BRANDING COLORS ---
+  const { primaryColor, accentColor } = useBranding();
+
+  // --- 3. DEFINE STATS ARRAY AND COLORS (like OrderStats) ---
+  const stats = [
+    {
+      title: "Total Items",
+      value: totalItems,
+      icon: Package,
+      description: "Active inventory items",
+    },
+    {
+      title: "Raw Materials",
+      value: rawMaterials,
+      icon: Boxes,
+      description: "Ingredients & components",
+    },
+    {
+      title: "Finished Products",
+      value: finishedProducts,
+      icon: TrendingUp,
+      description: "Ready for distribution",
+    },
+    {
+      title: "Low Stock Alerts",
+      value: lowStock,
+      icon: AlertTriangle,
+      description: "Items need reordering",
+    },
+  ];
+
+  const mainColors = [primaryColor, accentColor, primaryColor, accentColor];
+  const gradients = [
+    `linear-gradient(to br, ${primaryColor}, ${accentColor})`,
+    `linear-gradient(to br, ${accentColor}, ${primaryColor})`,
+    `linear-gradient(to br, ${primaryColor}, ${accentColor})`,
+    `linear-gradient(to br, ${accentColor}, ${primaryColor})`,
+  ];
+
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card className="border-border shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-medium)] transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Total Items
-          </CardTitle>
-          <Package className="h-4 w-4 text-primary" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-foreground">{totalItems}</div>
-          <p className="text-xs text-muted-foreground">Active inventory items</p>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-medium)] transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Raw Materials
-          </CardTitle>
-          <Boxes className="h-4 w-4 text-primary" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-foreground">{rawMaterials}</div>
-          <p className="text-xs text-muted-foreground">Ingredients & components</p>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-medium)] transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Finished Products
-          </CardTitle>
-          <TrendingUp className="h-4 w-4 text-success" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-foreground">{finishedProducts}</div>
-          <p className="text-xs text-muted-foreground">Ready for distribution</p>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-medium)] transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Low Stock Alerts
-          </CardTitle>
-          <AlertTriangle className="h-4 w-4 text-warning" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-foreground">{lowStock}</div>
-          <p className="text-xs text-muted-foreground">Items need reordering</p>
-        </CardContent>
-      </Card>
+    // --- 4. APPLY STYLING FROM ORDERSTATS ---
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat, index) => (
+        <Card
+          key={stat.title}
+          className="relative overflow-hidden border-primary/20 bg-card/50 backdrop-blur transition-all hover:shadow-lg hover:shadow-primary/20 hover:scale-105"
+          style={{ borderColor: `${mainColors[index]}` }} // 33 is ~20% opacity
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  {stat.title}
+                </p>
+                <p
+                  className="text-3xl font-bold mt-2 bg-gradient-to-r bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, hsl(var(--foreground)), ${mainColors[index]})`,
+                  }}
+                >
+                  {stat.value}
+                </p>
+                {/* Optional: Kept description, but smaller to fit new style */}
+                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+              </div>
+              <div
+                className="p-3 rounded-lg"
+                style={{ background: gradients[index], opacity: 0.1 }}
+              >
+                {/* Icons are h-6 w-6 to match OrderStats */}
+                <stat.icon className="h-6 w-6" />
+              </div>
+            </div>
+            <div
+              className="absolute bottom-0 left-0 h-1 w-full"
+              style={{ background: gradients[index] }}
+            />
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

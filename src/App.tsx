@@ -18,8 +18,6 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SessionListener from "./components/SessionListener"; // 🚨 NEW IMPORT
 
-// Remove the unused InviteSessionHandler from the previous step if it's still there
-// ...
 
 const queryClient = new QueryClient();
 

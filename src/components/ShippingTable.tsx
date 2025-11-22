@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
 interface ShippingTableProps {
   shipments: Shipment[];
@@ -34,14 +35,17 @@ interface ShippingTableProps {
 }
 
 const ShippingTable = ({ shipments, onDelete, onUpdateStatus }: ShippingTableProps) => {
+  // --- 2. GET BRANDING COLOR ---
+  const { primaryColor } = useBranding();
+
   const getStatusVariant = (status: Shipment["status"]) => {
     switch (status) {
       case "scheduled":
         return "secondary";
       case "in_transit":
-        return "default";
+        return "secondary"; // Fallback, we'll style this one manually
       case "delivered":
-        return "outline";
+        return "success"; // Changed from outline for better visibility
       case "cancelled":
         return "destructive";
       default:
@@ -50,7 +54,7 @@ const ShippingTable = ({ shipments, onDelete, onUpdateStatus }: ShippingTablePro
   };
 
   const getTypeLabel = (type: string) => {
-    return type.split('_').map(word => 
+    return type.split('_').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
   };
@@ -117,20 +121,36 @@ const ShippingTable = ({ shipments, onDelete, onUpdateStatus }: ShippingTablePro
                 >
                   <SelectTrigger className="w-[140px]">
                     <SelectValue>
-                      <Badge variant={getStatusVariant(shipment.status)}>
-                        {shipment.status}
-                      </Badge>
+                      {/* --- 3. DYNAMICALLY STYLE "IN TRANSIT" BADGE --- */}
+                      {shipment.status === "in_transit" ? (
+                        <Badge
+                          style={{ backgroundColor: primaryColor }}
+                          className="text-primary-foreground"
+                        >
+                          In Transit
+                        </Badge>
+                      ) : (
+                        <Badge variant={getStatusVariant(shipment.status)}>
+                          {shipment.status}
+                        </Badge>
+                      )}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="scheduled">
                       <Badge variant="secondary">Scheduled</Badge>
                     </SelectItem>
+                    {/* --- 3. DYNAMICALLY STYLE "IN TRANSIT" BADGE --- */}
                     <SelectItem value="in_transit">
-                      <Badge variant="default">In Transit</Badge>
+                      <Badge
+                        style={{ backgroundColor: primaryColor }}
+                        className="text-primary-foreground"
+                      >
+                        In Transit
+                      </Badge>
                     </SelectItem>
                     <SelectItem value="delivered">
-                      <Badge variant="outline">Delivered</Badge>
+                      <Badge variant="success">Delivered</Badge>
                     </SelectItem>
                     <SelectItem value="cancelled">
                       <Badge variant="destructive">Cancelled</Badge>
@@ -144,7 +164,8 @@ const ShippingTable = ({ shipments, onDelete, onUpdateStatus }: ShippingTablePro
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="icon">
-                          <Eye className="h-4 w-4" />
+                          {/* --- 4. APPLY DYNAMIC ICON COLOR --- */}
+                          <Eye className="h-4 w-4" style={{ color: primaryColor }} />
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
