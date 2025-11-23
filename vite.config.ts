@@ -5,8 +5,12 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // ✨ ADD THIS LINE to set the base path for GitHub Pages ✨
   base: "/duck-inventory-systems/",
+
+  build: {
+    outDir: "docs",
+  },
+
   server: {
     host: "::",
     port: 8080,
