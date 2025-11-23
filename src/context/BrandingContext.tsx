@@ -18,8 +18,8 @@ export const useBranding = () => {
 };
 
 export const BrandingProvider = ({ children }: { children: React.ReactNode }) => {
-    const [primaryColor, setPrimaryColor] = useState(""); // default Maroon
-    const [accentColor, setAccentColor] = useState("");   // default Gold
+    const [primaryColor, setPrimaryColor] = useState("#800000"); // default Maroon
+    const [accentColor, setAccentColor] = useState("#D3AF37");   // default Gold
 
     const applyColorsToCSS = (primary: string, accent: string) => {
         const root = document.documentElement;
