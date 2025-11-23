@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 // --- Import added icons ---
-import { Trash2, Plus, Package, ShoppingCart, LogOut, Truck, Settings } from "lucide-react"; // <-- CHANGED
+import { Trash2, Plus, Package, ShoppingCart, LogOut, Truck, Settings, UsersRound, TrendingUp } from "lucide-react"; // <-- CHANGED
 import { useNavigate } from "react-router-dom";
 import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
@@ -208,7 +208,7 @@ const Properties = () => {
               onClick={() => navigate("/orders")}
               className="gap-2"
             >
-              <ShoppingCart className="h-4 w-4" style={{ color: primaryColor }} />
+              <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
               Orders
             </Button>
             <Button
@@ -226,6 +226,14 @@ const Properties = () => {
             >
               <Settings className="h-4 w-4" style={{ color: primaryColor }} />
               Properties
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/teammanagement")}
+              className="gap-2"
+            >
+              <UsersRound className="h-4 w-4" />
+              Team Management
             </Button>
             <Button
               variant="ghost"

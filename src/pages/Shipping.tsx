@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Package, LogOut, Settings, TrendingUp, Truck } from "lucide-react";
+import { Package, LogOut, Settings, TrendingUp, Truck, UsersRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -316,6 +316,14 @@ const Shipping = () => {
               onAdd={handleAddShipment}
               companyId={companyId}
             />
+            <Button
+              variant="outline"
+              onClick={() => navigate("/teammanagement")}
+              className="gap-2"
+            >
+              <UsersRound className="h-4 w-4" />
+              Team Management
+            </Button>
             <Button
               variant="ghost"
               onClick={handleLogout}

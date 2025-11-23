@@ -24,6 +24,7 @@ import { Order } from "@/pages/Orders";
 import { useCustomFields } from "@/hooks/useCustomFields";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
 interface AddOrderDialogProps {
   open: boolean;
@@ -40,6 +41,8 @@ interface InventoryItem {
 }
 
 const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
+  // --- 2. GET BRANDING COLORS ---
+  const { primaryColor, accentColor } = useBranding();
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [contactInfo, setContactInfo] = useState({
@@ -62,7 +65,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     shippingAddress: "",
   });
   const [customData, setCustomData] = useState<Record<string, any>>({});
-  
+
   const { fields } = useCustomFields(companyId, "orders");
 
   useEffect(() => {
@@ -134,7 +137,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
 
   const handleItemChange = (index: number, field: string, value: any) => {
     const newItems = [...orderItems];
-    
+
     if (field === "inventoryItemId") {
       const selectedItem = inventoryItems.find(item => item.id === value);
       if (selectedItem) {
@@ -154,7 +157,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
       }
       newItems[index].quantity = qty;
     }
-    
+
     setOrderItems(newItems);
   };
 
@@ -202,7 +205,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     };
 
     onAdd(newOrder, customData);
-    
+
     // Reset form
     setContactInfo({ name: "", email: "", phone: "" });
     setOrderItems([]);
@@ -214,7 +217,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
 
   const renderCustomField = (field: any) => {
     const value = customData[field.field_name] || "";
-    
+
     switch (field.field_type) {
       case "text":
         return (
@@ -259,7 +262,13 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+        {/* --- 3. APPLY DYNAMIC STYLING --- */}
+        <Button
+          className="text-primary-foreground"
+          style={{ backgroundColor: primaryColor }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = accentColor)}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           New Order
         </Button>
@@ -313,8 +322,15 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Order Items</h3>
-              <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
-                <Plus className="h-4 w-4 mr-2" />
+              {/* --- 3. APPLY DYNAMIC STYLING --- */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddItem}
+                style={{ color: primaryColor, borderColor: primaryColor }}
+              >
+                <Plus className="h-4 w-4 mr-2" style={{ color: primaryColor }} />
                 Add Item
               </Button>
             </div>
@@ -470,7 +486,18 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            {/* --- 3. APPLY DYNAMIC STYLING --- */}
+            <Button
+              type="submit"
+              className="text-primary-foreground"
+              style={{ backgroundColor: primaryColor }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.backgroundColor = accentColor;
+                }
+              }}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+            >
               Create Order
             </Button>
           </div>

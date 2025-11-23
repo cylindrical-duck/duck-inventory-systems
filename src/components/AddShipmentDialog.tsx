@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { Shipment } from "@/pages/Shipping";
 import { supabase } from "@/integrations/supabase/client";
+import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
 
 interface AddShipmentDialogProps {
   open: boolean;
@@ -29,6 +30,8 @@ interface AddShipmentDialogProps {
 }
 
 const AddShipmentDialog = ({ open, onOpenChange, onAdd, companyId }: AddShipmentDialogProps) => {
+  // --- 2. GET BRANDING COLORS ---
+  const { primaryColor, accentColor } = useBranding();
   const [orders, setOrders] = useState<Array<{ id: string; orderNumber: string; customerName: string }>>([]);
   const [formData, setFormData] = useState<Partial<Shipment>>({
     status: "scheduled",
@@ -80,7 +83,7 @@ const AddShipmentDialog = ({ open, onOpenChange, onAdd, companyId }: AddShipment
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const shipmentNumber = formData.shipmentNumber || `SHP-${Date.now()}`;
 
     onAdd({
@@ -107,7 +110,13 @@ const AddShipmentDialog = ({ open, onOpenChange, onAdd, companyId }: AddShipment
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        {/* --- 3. APPLY DYNAMIC STYLING --- */}
+        <Button
+          className="gap-2 text-primary-foreground"
+          style={{ backgroundColor: primaryColor }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = accentColor)}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+        >
           <Plus className="h-4 w-4" />
           New Shipment
         </Button>
@@ -264,7 +273,20 @@ const AddShipmentDialog = ({ open, onOpenChange, onAdd, companyId }: AddShipment
             >
               Cancel
             </Button>
-            <Button type="submit">Create Shipment</Button>
+            {/* --- 3. APPLY DYNAMIC STYLING --- */}
+            <Button
+              type="submit"
+              className="text-primary-foreground"
+              style={{ backgroundColor: primaryColor }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.backgroundColor = accentColor;
+                }
+              }}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+            >
+              Create Shipment
+            </Button>
           </div>
         </form>
       </DialogContent>

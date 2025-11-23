@@ -18,17 +18,66 @@ export const useBranding = () => {
 };
 
 export const BrandingProvider = ({ children }: { children: React.ReactNode }) => {
-    const [primaryColor, setPrimaryColor] = useState("#800000"); // default Maroon
-    const [accentColor, setAccentColor] = useState("#FFD700");   // default Gold
+    const [primaryColor, setPrimaryColor] = useState(""); // default Maroon
+    const [accentColor, setAccentColor] = useState("");   // default Gold
 
-    // 🔥 Automatically inject CSS variables into :root
     const applyColorsToCSS = (primary: string, accent: string) => {
         const root = document.documentElement;
+
+        // Convert hex to HSL component strings
+        const primaryHSL = hexToHSLComponents(primary);
+        const accentHSL = hexToHSLComponents(accent);
+
+        // Set the variables that index.css (shadcn/ui) uses
+        root.style.setProperty("--primary", primaryHSL);
+        root.style.setProperty("--accent", accentHSL);
+
+        // --- THIS IS THE FIX FOR THE OUTLINE ---
+        // Set the --ring variable to your accent color
+        root.style.setProperty("--ring", accentHSL);
+
+        // We can keep your original variables too, just in case
         root.style.setProperty("--company-primary", primary);
         root.style.setProperty("--company-accent", accent);
     };
 
-    // 🚀 Loads branding from Supabase
+    /**
+ * Converts a hex color string to an HSL component string.
+ * e.g., "#800000" -> "0 100% 25%"
+ */
+    function hexToHSLComponents(hex: string): string {
+        hex = hex.replace(/^#/, '');
+        if (hex.length === 3) {
+            hex = hex.split('').map(char => char + char).join('');
+        }
+        let r = parseInt(hex.substring(0, 2), 16) / 255;
+        let g = parseInt(hex.substring(2, 4), 16) / 255;
+        let b = parseInt(hex.substring(4, 6), 16) / 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h = 0, s = 0;
+        let l = (max + min) / 2;
+
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+
+        h = Math.round(h * 360);
+        s = Math.round(s * 100);
+        l = Math.round(l * 100);
+
+        return `${h} ${s}% ${l}%`;
+    }
+
+    // Loads branding from Supabase
     const reloadBranding = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -49,12 +98,12 @@ export const BrandingProvider = ({ children }: { children: React.ReactNode }) =>
                 .maybeSingle();
 
             if (company) {
-                setPrimaryColor(company.primary_color ?? "#800000");
-                setAccentColor(company.accent_color ?? "#FFD700");
+                setPrimaryColor(company.primary_color);
+                setAccentColor(company.accent_color);
 
                 applyColorsToCSS(
-                    company.primary_color ?? "#800000",
-                    company.accent_color ?? "#FFD700"
+                    company.primary_color,
+                    company.accent_color
                 );
             }
         } catch (err) {

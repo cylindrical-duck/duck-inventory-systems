@@ -18,7 +18,7 @@ const Dashboard = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string>("DuckInventory");
+  const [companyName, setCompanyName] = useState<string>("");
 
   useEffect(() => {
     fetchProfile();
@@ -188,14 +188,14 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* ICON BOX WITH BRAND COLORS */}
-              <div
+              {/* <div
                 className="flex h-10 w-10 items-center justify-center rounded-lg"
                 style={{
                   background: `linear-gradient(to bottom right, var(--company-primary), var(--company-primary))`
                 }}
               >
                 <Package className="h-6 w-6 text-white" />
-              </div>
+              </div> */}
 
               <div>
                 {/* COMPANY TITLE WITH BRANDING GRADIENT */}

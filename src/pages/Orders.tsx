@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Package, LogOut, Settings, Truck, TrendingUp } from "lucide-react";
+import { Package, LogOut, Settings, Truck, TrendingUp, UsersRound } from "lucide-react";
 import OrderStats from "@/components/OrderStats";
 import OrderTable from "@/components/OrderTable";
 import AddOrderDialog from "@/components/AddOrderDialog";
@@ -41,7 +41,7 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string>("DuckInventory");
+  const [companyName, setCompanyName] = useState<string>("");
 
   useEffect(() => {
     fetchProfile();
@@ -330,6 +330,16 @@ const Orders = () => {
               onOpenChange={setIsAddDialogOpen}
               onAdd={handleAddOrder}
             />
+
+            <Button
+              variant="outline"
+              onClick={() => navigate("/teammanagement")}
+              className="gap-2"
+            >
+              <UsersRound className="h-4 w-4" />
+              Team Management
+            </Button>
+
             <Button
               variant="ghost"
               onClick={handleLogout}

@@ -17,7 +17,8 @@ import {
     Truck,
     LogOut,
     Palette, // ✨ NEW: Icon for color picker
-    User, // ✨ NEW: Icon for team members
+    User,
+    UsersRound, // ✨ NEW: Icon for team members
 } from "lucide-react";
 import { Separator } from "../components/ui/separator"; // ✨ NEW: For dividing list items
 import { useBranding } from "@/context/BrandingContext";
@@ -39,9 +40,12 @@ const TeamManagement = () => {
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
     // ✨ UPDATED: Use Maroon/Gold as initial defaults
-    const [primaryColor, setPrimaryColor] = useState("#800000"); // Maroon
-    const [accentColor, setAccentColor] = useState("#FFD700"); // Gold
+    const [primaryColor, setPrimaryColor] = useState(""); // Maroon
+    const [accentColor, setAccentColor] = useState(""); // Gold
     const [colorLoading, setColorLoading] = useState(false);
+
+    const { reloadBranding } = useBranding();
+
 
 
     // Fetch all company and team data on load
@@ -58,7 +62,6 @@ const TeamManagement = () => {
             }
 
             // 1. Get current user's profile and company ID
-            // ✨ USE .maybeSingle() for safety, like Auth.tsx
             const { data: profile, error: profileError } = await supabase
                 .from("profiles")
                 .select("company_id")
@@ -67,7 +70,7 @@ const TeamManagement = () => {
 
             if (profileError) throw profileError;
 
-            // ✨ CRUCIAL CHECK: Ensure profile and company_id exist before proceeding
+            // Ensure profile and company_id exist before proceeding
             if (!profile || !profile.company_id) {
                 toast.error("Could not find your company profile.");
                 navigate("/"); // No company, send back to safety
@@ -170,7 +173,6 @@ const TeamManagement = () => {
         if (!companyId) return;
 
         setColorLoading(true);
-        const { reloadBranding } = useBranding();
         try {
             const { error } = await supabase
                 .from("companies")
@@ -238,9 +240,17 @@ const TeamManagement = () => {
                                 <Truck className="h-4 w-4" />
                                 Shipping
                             </Button>
-                            <Button variant="default" onClick={() => navigate("/properties")} className="gap-2 bg-[var(--company-primary)] hover:bg-[var(--company-accent)] text-white">
+                            <Button variant="outline" onClick={() => navigate("/properties")} className="gap-2">
                                 <Settings className="h-4 w-4" />
                                 Properties
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => navigate("/teammanagement")}
+                                className="gap-2"
+                            >
+                                <UsersRound className="h-4 w-4" />
+                                Team Management
                             </Button>
                             <Button variant="ghost" onClick={handleLogout} className="gap-2">
                                 <LogOut className="h-4 w-4" />
