@@ -27,7 +27,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       {/* 🚨 WRAP THE BROWSER ROUTER WITH THE LISTENER */}
-      <BrowserRouter>
+      <BrowserRouter basename="/duck-inventory-systems">
         <SessionListener>
           <Routes>
             <Route path="/" element={<Landing />} />
