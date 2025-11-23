@@ -15,7 +15,7 @@ const Landing = () => {
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80">
                 <img
-                  src="src/logos/logo-stack-3.png"
+                  src="/logos/logo-stack-3.png"
                   alt="Stackable Logo"
                   className="h-full w-full object-cover"
                 />              </div>
