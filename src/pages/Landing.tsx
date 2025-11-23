@@ -14,10 +14,13 @@ const Landing = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80">
-                <Package className="h-6 w-6 text-primary-foreground" />
-              </div>
+                <img
+                  src="src/logos/logo-stack-3.png"
+                  alt="Stackable Logo"
+                  className="h-full w-full object-cover"
+                />              </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">DuckInventory</h1>
+                <h1 className="text-2xl font-bold text-foreground">Stackable</h1>
                 <p className="text-sm text-muted-foreground">CPG Inventory Management</p>
               </div>
             </div>
@@ -33,8 +36,8 @@ const Landing = () => {
             Stop Wrestling with Excel Spreadsheets
           </h2>
           <p className="text-xl text-muted-foreground">
-            CPG companies lose thousands of hours managing inventory in Excel. 
-            DuckInventory gives you real-time visibility, automated tracking, and 
+            CPG companies lose thousands of hours managing inventory in Excel.
+            Stackable gives you real-time visibility, automated tracking, and
             seamless order management—all in one powerful platform.
           </p>
           <div className="flex gap-4 justify-center pt-4">
@@ -60,7 +63,7 @@ const Landing = () => {
                 <CardContent className="pt-6">
                   <h4 className="text-xl font-semibold mb-2 text-destructive">Manual Updates</h4>
                   <p className="text-muted-foreground">
-                    Constantly updating quantities, chasing team members for data, 
+                    Constantly updating quantities, chasing team members for data,
                     and dealing with version control chaos.
                   </p>
                 </CardContent>
@@ -69,7 +72,7 @@ const Landing = () => {
                 <CardContent className="pt-6">
                   <h4 className="text-xl font-semibold mb-2 text-destructive">No Real-Time Visibility</h4>
                   <p className="text-muted-foreground">
-                    Never knowing actual stock levels until it's too late. 
+                    Never knowing actual stock levels until it's too late.
                     Stockouts and overordering cost you money.
                   </p>
                 </CardContent>
@@ -78,7 +81,7 @@ const Landing = () => {
                 <CardContent className="pt-6">
                   <h4 className="text-xl font-semibold mb-2 text-destructive">Error-Prone</h4>
                   <p className="text-muted-foreground">
-                    One wrong formula or deleted cell can corrupt your entire inventory. 
+                    One wrong formula or deleted cell can corrupt your entire inventory.
                     Human errors compound over time.
                   </p>
                 </CardContent>
@@ -87,7 +90,7 @@ const Landing = () => {
                 <CardContent className="pt-6">
                   <h4 className="text-xl font-semibold mb-2 text-destructive">Difficult Scaling</h4>
                   <p className="text-muted-foreground">
-                    As your product lines grow, Excel becomes unmanageable. 
+                    As your product lines grow, Excel becomes unmanageable.
                     Multiple sheets, broken links, and slow performance.
                   </p>
                 </CardContent>
@@ -114,7 +117,7 @@ const Landing = () => {
                 <div>
                   <h4 className="text-xl font-semibold mb-2">Dual Inventory Tracking</h4>
                   <p className="text-muted-foreground">
-                    Track both raw materials and finished products in one place. 
+                    Track both raw materials and finished products in one place.
                     Perfect for cookie makers, olive oil producers, and all CPG businesses.
                   </p>
                 </div>
@@ -129,7 +132,7 @@ const Landing = () => {
                 <div>
                   <h4 className="text-xl font-semibold mb-2">Smart Reorder Alerts</h4>
                   <p className="text-muted-foreground">
-                    Automatic low-stock notifications ensure you never run out of 
+                    Automatic low-stock notifications ensure you never run out of
                     critical ingredients or packaging materials.
                   </p>
                 </div>
@@ -144,7 +147,7 @@ const Landing = () => {
                 <div>
                   <h4 className="text-xl font-semibold mb-2">Order Management</h4>
                   <p className="text-muted-foreground">
-                    Integrated order tracking that automatically updates your inventory. 
+                    Integrated order tracking that automatically updates your inventory.
                     Know exactly what's committed and what's available.
                   </p>
                 </div>
@@ -159,7 +162,7 @@ const Landing = () => {
                 <div>
                   <h4 className="text-xl font-semibold mb-2">Real-Time Updates</h4>
                   <p className="text-muted-foreground">
-                    Everyone on your team sees the same data instantly. 
+                    Everyone on your team sees the same data instantly.
                     No more emailing spreadsheets back and forth.
                   </p>
                 </div>
@@ -203,7 +206,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border bg-card py-8">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>&copy; 2025 DuckInventory. Built for CPG companies that demand better.</p>
+          <p>&copy; 2025 Stackable. Built for CPG companies that demand better.</p>
         </div>
       </footer>
     </div>
