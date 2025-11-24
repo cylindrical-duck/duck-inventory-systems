@@ -15,10 +15,11 @@ const Landing = () => {
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80">
                 <img
-                  src="/logos/logo-stack-3.png"
+                  src="/duck-inventory-systems/logos/logo-stack-3.png"
                   alt="Stackable Logo"
                   className="h-full w-full object-cover"
-                />              </div>
+                />
+              </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Stackable</h1>
                 <p className="text-sm text-muted-foreground">CPG Inventory Management</p>
