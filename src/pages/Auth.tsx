@@ -72,7 +72,7 @@ const Auth = () => {
           });
           if (signUpError) throw signUpError;
 
-          //toast.success("Account created! You are the admin. You can now log in.");
+          toast.success("Account created! You are the admin. You can now log in.");
           setIsLogin(true);
         }
       }

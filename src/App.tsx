@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Shipping from "./pages/Shipping";
 import Properties from "./pages/Properties";
+import Customers from "./pages/Customers";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import TeamManagement from "./pages/TeamManagement";
@@ -16,7 +17,8 @@ import SetPassword from "./pages/SetPassword";
 import { supabase } from "./integrations/supabase/client";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import SessionListener from "./components/SessionListener"; // 🚨 NEW IMPORT
+import SessionListener from "./components/SessionListener";
+import Reports from "./pages/Reports";
 
 
 const queryClient = new QueryClient();
@@ -74,6 +76,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TeamManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customers"
+              element={
+                <ProtectedRoute>
+                  <Customers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
                 </ProtectedRoute>
               }
             />

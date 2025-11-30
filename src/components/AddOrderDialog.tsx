@@ -24,7 +24,7 @@ import { Order } from "@/pages/Orders";
 import { useCustomFields } from "@/hooks/useCustomFields";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
+import { useBranding } from "../context/BrandingContext";
 
 interface AddOrderDialogProps {
   open: boolean;
@@ -40,11 +40,22 @@ interface InventoryItem {
   unit: string;
 }
 
+// Define Customer Interface
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
 const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
-  // --- 2. GET BRANDING COLORS ---
   const { primaryColor, accentColor } = useBranding();
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+
   const [contactInfo, setContactInfo] = useState({
     name: "",
     email: "",
@@ -68,13 +79,16 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
 
   const { fields } = useCustomFields(companyId, "orders");
 
+  // Fetch company ID on mount
   useEffect(() => {
     fetchProfile();
   }, []);
 
+  // Fetch inventory and customers when the dialog opens and companyId is available
   useEffect(() => {
     if (companyId && open) {
       fetchFinishedProducts();
+      fetchCustomers();
     }
   }, [companyId, open]);
 
@@ -121,6 +135,70 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     }
   };
 
+  // New function to fetch customers
+  const fetchCustomers = async () => {
+    if (!companyId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id, name, email, phone, address")
+        .eq("company_id", companyId)
+        .order("name");
+
+      if (error) throw error;
+
+      setCustomers(data || []);
+    } catch (error) {
+      toast.error("Failed to load customers");
+      console.error("Error fetching customers:", error);
+    }
+  };
+
+  // Function to handle customer selection
+  const handleCustomerSelect = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    const customer = customers.find(c => c.id === customerId);
+
+    if (customer) {
+      // Auto-fill contact info
+      setContactInfo({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+      });
+
+      if (customer.address) {
+        setShippingInfo(prev => ({
+          ...prev,
+          shippingAddress: customer.address,
+        }));
+      }
+    } else {
+      setContactInfo({ name: "", email: "", phone: "" });
+      setShippingInfo(prev => ({
+        ...prev,
+        shippingAddress: "",
+      }));
+    }
+  };
+
+  const resetForm = () => {
+    setContactInfo({ name: "", email: "", phone: "" });
+    setOrderItems([]);
+    setNeedsShipping(false);
+    setShippingInfo({ recipientName: "", recipientEmail: "", recipientPhone: "", shippingAddress: "" });
+    setCustomData({});
+    setSelectedCustomerId(null);
+  };
+
+  const handleOpenChangeWithReset = (open: boolean) => {
+    onOpenChange(open);
+    if (!open) {
+      resetForm();
+    }
+  };
+
   const handleAddItem = () => {
     setOrderItems([...orderItems, {
       inventoryItemId: "",
@@ -164,6 +242,11 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!contactInfo.name || !contactInfo.email || !contactInfo.phone) {
+      toast.error("Please ensure all customer contact details (Name, Email, Phone) are filled out.");
+      return;
+    }
+
     if (orderItems.length === 0) {
       toast.error("Please add at least one item");
       return;
@@ -188,6 +271,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
       contactName: contactInfo.name,
       contactEmail: contactInfo.email,
       contactPhone: contactInfo.phone,
+      selectedCustomerId: selectedCustomerId,
       items: orderItems.map(item => ({
         itemId: item.inventoryItemId,
         itemName: item.itemName,
@@ -206,12 +290,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
 
     onAdd(newOrder, customData);
 
-    // Reset form
-    setContactInfo({ name: "", email: "", phone: "" });
-    setOrderItems([]);
-    setNeedsShipping(false);
-    setShippingInfo({ recipientName: "", recipientEmail: "", recipientPhone: "", shippingAddress: "" });
-    setCustomData({});
+    resetForm();
     onOpenChange(false);
   };
 
@@ -260,9 +339,8 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChangeWithReset}>
       <DialogTrigger asChild>
-        {/* --- 3. APPLY DYNAMIC STYLING --- */}
         <Button
           className="text-primary-foreground"
           style={{ backgroundColor: primaryColor }}
@@ -283,9 +361,30 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
             <h3 className="text-sm font-medium">Customer Information</h3>
+
+            <div className="space-y-2">
+              <Label htmlFor="customerSelect">Select Existing Customer</Label>
+              <Select
+                value={selectedCustomerId || "new"}
+                onValueChange={handleCustomerSelect}
+              >
+                <SelectTrigger id="customerSelect">
+                  <SelectValue placeholder="Select a customer or create a new one" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">-- New Customer --</SelectItem>
+                  {customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.name} ({customer.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contactName">Name</Label>
+                <Label htmlFor="contactName">Name *</Label>
                 <Input
                   id="contactName"
                   value={contactInfo.name}
@@ -295,7 +394,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contactEmail">Email</Label>
+                <Label htmlFor="contactEmail">Email *</Label>
                 <Input
                   id="contactEmail"
                   type="email"
@@ -307,7 +406,7 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="contactPhone">Phone</Label>
+              <Label htmlFor="contactPhone">Phone *</Label>
               <Input
                 id="contactPhone"
                 type="tel"
@@ -322,7 +421,6 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Order Items</h3>
-              {/* --- 3. APPLY DYNAMIC STYLING --- */}
               <Button
                 type="button"
                 variant="outline"
@@ -394,7 +492,6 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
             )}
           </div>
 
-          {/* Shipping Section */}
           <div className="space-y-4 pt-4 border-t">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -458,7 +555,6 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
             )}
           </div>
 
-          {/* Custom Fields */}
           {fields.length > 0 && (
             <div className="space-y-4 pt-4 border-t">
               <h3 className="text-sm font-medium">Additional Information</h3>
@@ -483,10 +579,9 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
           )}
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChangeWithReset(false)}>
               Cancel
             </Button>
-            {/* --- 3. APPLY DYNAMIC STYLING --- */}
             <Button
               type="submit"
               className="text-primary-foreground"

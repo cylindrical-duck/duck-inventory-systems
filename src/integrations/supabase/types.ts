@@ -41,6 +41,56 @@ export type Database = {
         }
         Relationships: []
       }
+      // --- START: NEW CUSTOMERS TABLE ---
+      customers: {
+        Row: {
+          id: string
+          created_at: string
+          company_id: string
+          user_id: string
+          name: string
+          email: string | null
+          phone: string | null
+          address: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          company_id: string
+          user_id: string
+          name: string
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          company_id?: string
+          user_id?: string
+          name?: string
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      // --- END: NEW CUSTOMERS TABLE ---
       custom_fields: {
         Row: {
           company_id: string
@@ -229,6 +279,7 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string
+          customer_id: string | null
           id: string
           needs_shipping: boolean | null
           order_number: string
@@ -248,6 +299,7 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string
+          customer_id?: string | null
           id?: string
           needs_shipping?: boolean | null
           order_number: string
@@ -267,6 +319,7 @@ export type Database = {
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          customer_id?: string | null
           id?: string
           needs_shipping?: boolean | null
           order_number?: string
@@ -411,6 +464,11 @@ export type Database = {
       | "sample"
       | "distributor_pickup"
       | "store_delivery"
+      | "add_new"
+      | "damaged_goods"
+      | "correction"
+      | "returns"
+      | "other"
     }
     CompositeTypes: {
       [_ in never]: never

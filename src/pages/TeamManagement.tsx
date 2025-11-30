@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// FIX: Switching to direct relative imports since absolute paths (@/) failed to resolve
 import { supabase } from "../integrations/supabase/client";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -11,19 +10,14 @@ import {
     Users,
     Mail,
     Loader2,
-    Package,
-    Settings,
-    ShoppingCart,
-    Truck,
-    LogOut,
-    Palette, // ✨ NEW: Icon for color picker
+    Palette,
     User,
-    UsersRound, // ✨ NEW: Icon for team members
 } from "lucide-react";
-import { Separator } from "../components/ui/separator"; // ✨ NEW: For dividing list items
+import { Separator } from "../components/ui/separator";
 import { useBranding } from "@/context/BrandingContext";
 
-// ✨ NEW: Define a type for team members
+import { AppHeader } from "@/components/AppHeader";
+
 type TeamMember = {
     email: string;
     role: string;
@@ -35,20 +29,16 @@ const TeamManagement = () => {
     const [loading, setLoading] = useState(false);
     const [companyName, setCompanyName] = useState("DuckInventory");
 
-    // ✨ NEW STATE: For team list and company data
     const [companyId, setCompanyId] = useState<string | null>(null);
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
-    // ✨ UPDATED: Use Maroon/Gold as initial defaults
-    const [primaryColor, setPrimaryColor] = useState(""); // Maroon
-    const [accentColor, setAccentColor] = useState(""); // Gold
+    const [primaryColor, setPrimaryColor] = useState("");
+    const [accentColor, setAccentColor] = useState("");
     const [colorLoading, setColorLoading] = useState(false);
 
     const { reloadBranding } = useBranding();
 
 
-
-    // Fetch all company and team data on load
     useEffect(() => {
         fetchCompanyAndTeamData();
     }, []);
@@ -86,7 +76,7 @@ const TeamManagement = () => {
                     .from("companies")
                     .select("name, primary_color, accent_color")
                     .eq("id", currentCompanyId)
-                    .maybeSingle(), // ✨ USE .maybeSingle() for safety
+                    .maybeSingle(),
                 supabase
                     .from("profiles")
                     .select("email, role")
@@ -97,9 +87,10 @@ const TeamManagement = () => {
             if (companyRes.error) throw companyRes.error;
             if (teamRes.error) throw teamRes.error;
 
-            // 4. ✨ SAFELY SET DATA: Check if data is not null before accessing
+            // 4. SAFELY SET DATA: Check if data is not null before accessing
             if (companyRes.data) {
                 setCompanyName(companyRes.data.name || "DuckInventory");
+                // Set initial color states for the color picker to use
                 setPrimaryColor(companyRes.data.primary_color || '#800000');
                 setAccentColor(companyRes.data.accent_color || '#FFD700');
             } else {
@@ -117,14 +108,8 @@ const TeamManagement = () => {
         }
     };
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        toast.success("Logged out successfully");
-        navigate("/");
-    };
-
     // --- Core Logic: Call the Supabase Edge Function ---
-    const handleInvite = async (e: React.FormEvent) => { // Added type for event
+    const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
@@ -157,7 +142,6 @@ const TeamManagement = () => {
             toast.success(`Invitation sent successfully to ${emailToInvite}`);
             setEmailToInvite("");
 
-            // ✨ NEW: Refresh the team list after a successful invite
             fetchCompanyAndTeamData();
 
         } catch (error: any) {
@@ -168,7 +152,6 @@ const TeamManagement = () => {
         }
     };
 
-    // ✨ NEW: Handler to save the updated colors
     const handleColorSave = async () => {
         if (!companyId) return;
 
@@ -195,7 +178,6 @@ const TeamManagement = () => {
     };
 
     return (
-        // ✨ NEW: Apply dynamic colors as CSS variables to this component's scope
         <div
             className="min-h-screen bg-background"
             style={{
@@ -203,76 +185,20 @@ const TeamManagement = () => {
                 '--company-accent': accentColor,
             } as React.CSSProperties}
         >
-            {/* Header (Standardized) */}
-            <header className="border-b border-border bg-card shadow-[var(--shadow-soft)]">
-                <div className="container mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            {/* ✨ NEW: Icon background uses dynamic colors */}
-                            <div
-                                className="flex h-10 w-10 items-center justify-center rounded-lg"
-                                style={{ background: `linear-gradient(to bottom right, var(--company-primary), var(--company-accent))` }}
-                            >
-                                <Users className="h-6 w-6 text-primary-foreground" />
-                            </div>
-                            <div>
-                                {/* ✨ NEW: Header text uses dynamic colors */}
-                                <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--company-primary)] via-[var(--company-accent)] to-[var(--company-primary)] bg-clip-text text-transparent">
-                                    {companyName}
-                                </h1>
-                                <p className="text-muted-foreground mt-2">
-                                    Team Management
-                                </p>
-                            </div>
-                        </div>
-                        {/* Navigation Buttons */}
-                        <div className="flex gap-3">
-                            {/* ... nav buttons ... */}
-                            <Button variant="outline" onClick={() => navigate("/dashboard")} className="gap-2">
-                                <Package className="h-4 w-4" />
-                                Inventory
-                            </Button>
-                            <Button variant="outline" onClick={() => navigate("/orders")} className="gap-2">
-                                <ShoppingCart className="h-4 w-4" />
-                                Orders
-                            </Button>
-                            <Button variant="outline" onClick={() => navigate("/shipping")} className="gap-2">
-                                <Truck className="h-4 w-4" />
-                                Shipping
-                            </Button>
-                            <Button variant="outline" onClick={() => navigate("/properties")} className="gap-2">
-                                <Settings className="h-4 w-4" />
-                                Properties
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                onClick={() => navigate("/teammanagement")}
-                                className="gap-2"
-                            >
-                                <UsersRound className="h-4 w-4" />
-                                Team Management
-                            </Button>
-                            <Button variant="ghost" onClick={handleLogout} className="gap-2">
-                                <LogOut className="h-4 w-4" />
-                                Logout
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <AppHeader
+                companyName={companyName}
+                pageTitle="Team Management"
+                pageSubtitle="Manage your team and company branding"
+                activePage="team"
+            />
 
-            {/* Main Content */}
-            {/* ✨ NEW: Changed to a 2-column grid for better layout */}
             <main className="container mx-auto px-4 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                    {/* --- COLUMN 1: Team Management --- */}
                     <div className="space-y-8">
-                        {/* Invite Card */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
-                                    {/* ✨ NEW: Icon uses dynamic color */}
                                     <Mail className="h-6 w-6 text-[var(--company-primary)]" /> Invite New Team Member
                                 </CardTitle>
                                 <CardDescription>
@@ -309,7 +235,6 @@ const TeamManagement = () => {
                             </CardContent>
                         </Card>
 
-                        {/* ✨ NEW: Team List Card */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -344,9 +269,7 @@ const TeamManagement = () => {
                         </Card>
                     </div>
 
-                    {/* --- COLUMN 2: Company Settings --- */}
                     <div className="space-y-8">
-                        {/* ✨ NEW: Color Picker Card */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">

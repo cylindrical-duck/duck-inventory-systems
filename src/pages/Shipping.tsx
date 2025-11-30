@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Package, LogOut, Settings, TrendingUp, Truck, UsersRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ShippingStats from "@/components/ShippingStats";
 import ShippingTable from "@/components/ShippingTable";
 import AddShipmentDialog from "@/components/AddShipmentDialog";
-import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
+
+import { AppHeader } from "@/components/AppHeader";
 
 export interface Shipment {
   id: string;
@@ -30,12 +29,11 @@ export interface Shipment {
 
 const Shipping = () => {
   const navigate = useNavigate();
-  // --- 2. GET BRANDING COLORS ---
-  const { primaryColor, accentColor } = useBranding();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("");
 
   useEffect(() => {
     fetchProfile();
@@ -51,6 +49,10 @@ const Shipping = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      if (user.user_metadata && user.user_metadata.company_name) {
+        setCompanyName(user.user_metadata.company_name);
+      }
 
       const { data, error } = await supabase
         .from("profiles")
@@ -252,88 +254,23 @@ const Shipping = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logged out successfully");
-    navigate("/");
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <AppHeader
+        companyName={companyName}
+        pageTitle="Shipping Schedule"
+        pageSubtitle="Manage shipments and track deliveries"
+        activePage="shipping"
+      >
+        <AddShipmentDialog
+          open={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          onAdd={handleAddShipment}
+          companyId={companyId}
+        />
+      </AppHeader>
+
       <div className="container mx-auto p-6 space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            {/* --- 3. APPLY DYNAMIC GRADIENT --- */}
-            <h1
-              className="text-2xl font-bold bg-clip-text text-transparent"
-              style={{
-                backgroundImage: `linear-gradient(to right, var(--company-primary), var(--company-accent), var(--company-primary))`,
-              }}
-            >
-              Shipping Schedule
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage shipments and track deliveries
-            </p>
-          </div>
-          <div className="flex gap-3">
-            {/* --- 4. APPLY DYNAMIC ICON COLORS --- */}
-            <Button
-              variant="outline"
-              onClick={() => navigate("/dashboard")}
-              className="gap-2"
-            >
-              <Package className="h-4 w-4" style={{ color: primaryColor }} />
-              Inventory
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/orders")}
-              className="gap-2"
-            >
-              <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
-              Orders
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => navigate("/shipping")}
-              className="gap-2"
-            >
-              <Truck className="h-4 w-4" style={{ color: primaryColor }} />
-              Shipping
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/properties")}
-              className="gap-2"
-            >
-              <Settings className="h-4 w-4" style={{ color: primaryColor }} />
-              Properties
-            </Button>
-            <AddShipmentDialog
-              open={isAddDialogOpen}
-              onOpenChange={setIsAddDialogOpen}
-              onAdd={handleAddShipment}
-              companyId={companyId}
-            />
-            <Button
-              variant="outline"
-              onClick={() => navigate("/teammanagement")}
-              className="gap-2"
-            >
-              <UsersRound className="h-4 w-4" />
-              Team Management
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" style={{ color: primaryColor }} />
-              Logout
-            </Button>
-          </div>
-        </div>
 
         <ShippingStats shipments={shipments} />
 

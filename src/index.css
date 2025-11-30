@@ -125,4 +125,10 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  input::placeholder,
+  textarea::placeholder {
+    /* You can change /80 (80% opacity) to /50 for even lighter text */
+    @apply text-muted-foreground/50 !important;
+  }
 }

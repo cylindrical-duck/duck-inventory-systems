@@ -40,12 +40,11 @@ interface InventoryTableProps {
 }
 
 export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps) => {
-  const { primaryColor, accentColor } = useBranding(); // <-- 2. GET THE DYNAMIC COLOR
+  const { primaryColor, accentColor } = useBranding();
   const [searchQuery, setSearchQuery] = useState("");
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Fetch Shipments on Mount ---
   useEffect(() => {
     fetchShipments();
   }, []);
@@ -163,12 +162,11 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
             ) : (
               filteredItems.map((item) => {
                 const status = getStockStatus(item.quantity, item.reorderLevel);
-                const physicalQty = calculatePhysicalStock(item); // Calculate here
+                const physicalQty = calculatePhysicalStock(item);
 
                 return (
                   <TableRow key={item.id} className="border-border">
                     <TableCell className="font-medium">{item.name}</TableCell>
-                    {/* --- 4. APPLY DYNAMIC STYLING TO BADGE --- */}
                     <TableCell>
                       {item.category === "raw" ? (
                         <Badge className="text-primary-foreground" style={{ backgroundColor: accentColor }}>Raw Material</Badge>
@@ -203,7 +201,6 @@ export const InventoryTable = ({ items, onEdit, onDelete }: InventoryTableProps)
                     <TableCell className="text-muted-foreground">{item.lastUpdated}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {/* 3. APPLY DYNAMIC COLOR TO ICONS */}
                         <Button
                           variant="ghost"
                           size="icon"

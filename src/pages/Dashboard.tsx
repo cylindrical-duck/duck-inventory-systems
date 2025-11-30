@@ -1,20 +1,15 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryStats } from "@/components/InventoryStats";
 import { InventoryTable, InventoryItem } from "@/components/InventoryTable";
 import { AddItemDialog } from "@/components/AddItemDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PendingOrdersCard from "@/components/PendingOrdersCard";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package, LogOut, Settings, Truck, TrendingUp, UsersRound } from "lucide-react";
-import { useBranding } from "../context/BrandingContext";
+
+import { AppHeader } from "@/components/AppHeader";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const { primaryColor, accentColor, reloadBranding } = useBranding();
-
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -78,15 +73,19 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logged out successfully");
-    navigate("/");
-  };
 
-  const handleItemSubmit = async (itemData: Omit<InventoryItem, "id" | "lastUpdated">, customData?: Record<string, any>) => {
+  const handleItemSubmit = async (
+    itemData: Omit<InventoryItem, "id" | "lastUpdated">,
+    customData: Record<string, any> | undefined,
+    actionType: string | any,
+    notes: string
+  ) => {
     if (!companyId) {
       toast.error("Company information not loaded");
+      return;
+    }
+    if (!actionType) {
+      toast.error("No action selected");
       return;
     }
 
@@ -98,28 +97,12 @@ const Dashboard = () => {
         (item) => item.name.toLowerCase() === itemData.name.toLowerCase()
       );
 
-      if (existingItem) {
-        const newQuantity = existingItem.quantity + itemData.quantity;
+      if (actionType === "add_new") {
+        if (existingItem) {
+          toast.error("Item name already exists. Use 'Add to Existing' action instead.");
+          return;
+        }
 
-        const { error: updateError } = await supabase
-          .from("inventory_items")
-          .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
-          .eq("id", existingItem.id);
-
-        if (updateError) throw updateError;
-
-        await supabase.from("inventory_transactions").insert({
-          company_id: companyId,
-          inventory_item_id: existingItem.id,
-          transaction_type: "restock",
-          quantity: itemData.quantity,
-          reference_type: "manual_restock",
-          notes: "Manual stock addition",
-        });
-
-        toast.success(`Stock updated for ${existingItem.name}`);
-
-      } else {
         const { data: newItem, error: insertError } = await supabase
           .from("inventory_items")
           .insert({
@@ -142,16 +125,54 @@ const Dashboard = () => {
         await supabase.from("inventory_transactions").insert({
           company_id: companyId,
           inventory_item_id: newItem.id,
-          transaction_type: "restock",
+          transaction_type: "add_new",
           quantity: newItem.quantity,
           reference_type: "item_creation",
-          notes: "New item created",
+          notes: notes || "New item created",
+        });
+        toast.success("New item added successfully");
+
+      } else {
+        if (!existingItem) {
+          toast.error("Item not found. Cannot apply adjustment to a non-existent item.");
+          return;
+        }
+
+        // Determine if the change is positive or negative
+        const isNegative = ["damaged_goods", "sample", "correction"].includes(actionType);
+        const changeAmount = Number(itemData.quantity);
+        const quantityChange = isNegative ? -changeAmount : changeAmount;
+
+        const newQuantity = existingItem.quantity + quantityChange;
+
+        // Add a guard against negative inventory
+        if (newQuantity < 0) {
+          toast.error(`Operation failed. Cannot set "${existingItem.name}" quantity below zero.`);
+          return;
+        }
+
+        // Update the item's quantity
+        const { error: updateError } = await supabase
+          .from("inventory_items")
+          .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
+          .eq("id", existingItem.id);
+
+        if (updateError) throw updateError;
+
+        // Log the specific adjustment transaction
+        await supabase.from("inventory_transactions").insert({
+          company_id: companyId,
+          inventory_item_id: existingItem.id,
+          transaction_type: actionType, // e.g., 'damaged_goods', 'returns'
+          quantity: quantityChange,      // The signed change, e.g., -5 or +10
+          reference_type: "manual_adjustment",
+          notes: notes || "Manual stock adjustment",
         });
 
-        toast.success("New item added successfully");
+        toast.success(`Stock updated for ${existingItem.name}`);
       }
 
-      fetchItems();
+      fetchItems(); // Refresh the list after any successful operation
     } catch (error: any) {
       toast.error("Failed to submit item");
       console.error("Error submitting item:", error);
@@ -183,79 +204,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card shadow-[var(--shadow-soft)]">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {/* ICON BOX WITH BRAND COLORS */}
-              {/* <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg"
-                style={{
-                  background: `linear-gradient(to bottom right, var(--company-primary), var(--company-primary))`
-                }}
-              >
-                <Package className="h-6 w-6 text-white" />
-              </div> */}
-
-              <div>
-                {/* COMPANY TITLE WITH BRANDING GRADIENT */}
-                <h1
-                  className="text-2xl font-bold bg-clip-text text-transparent"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, var(--company-primary), var(--company-accent), var(--company-primary))`
-                  }}
-                >
-                  {companyName}
-                </h1>
-
-                <p className="text-muted-foreground mt-2">
-                  CPG Inventory Management
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button variant="secondary" onClick={() => navigate("/dashboard")} className="gap-2">
-                <Package className="h-4 w-4" style={{ color: primaryColor }} />
-                Inventory
-              </Button>
-
-              <Button variant="outline" onClick={() => navigate("/orders")} className="gap-2">
-                <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
-                Orders
-              </Button>
-
-              <Button variant="outline" onClick={() => navigate("/shipping")} className="gap-2">
-                <Truck className="h-4 w-4" style={{ color: primaryColor }} />
-                Shipping
-              </Button>
-
-              <Button variant="outline" onClick={() => navigate("/properties")} className="gap-2">
-                <Settings className="h-4 w-4" style={{ color: primaryColor }} />
-                Properties
-              </Button>
-
-              <AddItemDialog onAdd={handleItemSubmit} items={items} />
-
-              <Button
-                variant="outline"
-                onClick={() => navigate("/teammanagement")}
-                className="gap-2"
-              >
-                <UsersRound className="h-4 w-4" />
-                Team Management
-              </Button>
-
-              <Button variant="ghost" onClick={handleLogout} className="gap-2">
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
-
-
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        companyName={companyName}
+        pageTitle="Inventory"
+        pageSubtitle="Track and manage your inventory"
+        activePage="inventory"
+      >
+        <AddItemDialog onAdd={handleItemSubmit} items={items} />
+      </AppHeader>
 
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-8">
@@ -268,7 +224,7 @@ const Dashboard = () => {
 
           <PendingOrdersCard companyId={companyId} />
 
-          <Tabs defaultValue="all" className="space-y-4">
+          <Tabs defaultValue="all" className="spacey-4">
             <TabsList
               className="bg-muted"
               style={{

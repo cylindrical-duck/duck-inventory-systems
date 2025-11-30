@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// FIX: Switching to direct relative imports since absolute paths (@/) failed to resolve
 import { supabase } from "../integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Lock, UserCheck } from "lucide-react";
 
-// Assuming you have components like Input and Button
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";

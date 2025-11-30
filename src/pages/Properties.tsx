@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-// --- Import added icons ---
-import { Trash2, Plus, Package, ShoppingCart, LogOut, Truck, Settings, UsersRound, TrendingUp } from "lucide-react"; // <-- CHANGED
+import { Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useBranding } from "../context/BrandingContext"; // <-- 1. IMPORT HOOK
+
+import { AppHeader } from "@/components/AppHeader";
 
 interface CustomField {
   id: string;
@@ -21,8 +21,6 @@ interface CustomField {
 
 const Properties = () => {
   const navigate = useNavigate();
-  // --- 2. GET BRANDING COLORS ---
-  const { primaryColor, accentColor } = useBranding();
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string>("DuckInventory");
   const [inventoryFields, setInventoryFields] = useState<CustomField[]>([]);
@@ -141,12 +139,6 @@ const Properties = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logged out successfully");
-    navigate("/");
-  };
-
   const renderFieldsList = (fields: CustomField[]) => (
     <div className="space-y-3">
       {fields.map((field) => (
@@ -177,77 +169,16 @@ const Properties = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <AppHeader
+        companyName={companyName}
+        pageTitle="Properties"
+        pageSubtitle="Customize your inventory and order fields"
+        activePage="properties"
+      />
+
       <div className="container mx-auto p-6 space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            {/* --- 3. APPLY DYNAMIC GRADIENT --- */}
-            <h1
-              className="text-2xl font-bold bg-clip-text text-transparent"
-              style={{
-                backgroundImage: `linear-gradient(to right, var(--company-primary), var(--company-accent), var(--company-primary))`,
-              }}
-            >
-              {companyName} Properties
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Customize your inventory and order fields
-            </p>
-          </div>
-          {/* --- 4. APPLY DYNAMIC ICON COLORS --- */}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/dashboard")}
-              className="gap-2"
-            >
-              <Package className="h-4 w-4" style={{ color: primaryColor }} />
-              Inventory
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/orders")}
-              className="gap-2"
-            >
-              <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
-              Orders
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/shipping")}
-              className="gap-2"
-            >
-              <Truck className="h-4 w-4" style={{ color: primaryColor }} />
-              Shipping
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => navigate("/properties")}
-              className="gap-2"
-            >
-              <Settings className="h-4 w-4" style={{ color: primaryColor }} />
-              Properties
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/teammanagement")}
-              className="gap-2"
-            >
-              <UsersRound className="h-4 w-4" />
-              Team Management
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" style={{ color: primaryColor }} />
-              Logout
-            </Button>
-          </div>
-        </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "inventory" | "orders")}>
-          {/* --- 5. APPLY DYNAMIC BORDER COLOR (like Dashboard) --- */}
           <TabsList
             className="grid w-full max-w-md grid-cols-2"
             style={{
@@ -295,18 +226,20 @@ const Properties = () => {
                     </Select>
                   </div>
                   <div className="flex items-end">
-                    {/* --- 6. APPLY DYNAMIC BUTTON STYLING --- */}
                     <Button
                       onClick={handleAddField}
                       disabled={inventoryFields.length >= 5}
                       className="w-full gap-2 text-primary-foreground"
-                      style={{ backgroundColor: primaryColor }}
+                      style={{
+                        backgroundColor: 'var(--company-primary)',
+                        transition: 'background-color 0.15s ease-in-out'
+                      }}
                       onMouseEnter={(e) => {
                         if (!e.currentTarget.disabled) {
-                          e.currentTarget.style.backgroundColor = accentColor;
+                          e.currentTarget.style.backgroundColor = 'var(--company-accent)';
                         }
                       }}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--company-primary)')}
                     >
                       <Plus className="h-4 w-4" />
                       Add Field
@@ -356,18 +289,20 @@ const Properties = () => {
                     </Select>
                   </div>
                   <div className="flex items-end">
-                    {/* --- 6. APPLY DYNAMIC BUTTON STYLING --- */}
                     <Button
                       onClick={handleAddField}
                       disabled={orderFields.length >= 5}
                       className="w-full gap-2 text-primary-foreground"
-                      style={{ backgroundColor: primaryColor }}
+                      style={{
+                        backgroundColor: 'var(--company-primary)',
+                        transition: 'background-color 0.15s ease-in-out'
+                      }}
                       onMouseEnter={(e) => {
                         if (!e.currentTarget.disabled) {
-                          e.currentTarget.style.backgroundColor = accentColor;
+                          e.currentTarget.style.backgroundColor = 'var(--company-accent)';
                         }
                       }}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--company-primary)')}
                     >
                       <Plus className="h-4 w-4" />
                       Add Field
