@@ -27,6 +27,7 @@ interface ItemTransactionHistoryProps {
 
 export const ItemTransactionHistory = ({ companyId, items }: ItemTransactionHistoryProps) => {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    // 'transactions' will hold the data fetched in ASCENDING order (oldest first)
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loadingTransactions, setLoadingTransactions] = useState(false);
 
@@ -44,6 +45,7 @@ export const ItemTransactionHistory = ({ companyId, items }: ItemTransactionHist
                     .select("id, created_at, transaction_type, quantity, reference_type, notes")
                     .eq("company_id", companyId)
                     .eq("inventory_item_id", selectedItemId)
+                    // STEP 1: Fetch in ASCENDING order for correct calculation
                     .order("created_at", { ascending: true });
 
                 if (error) throw error;
@@ -62,20 +64,24 @@ export const ItemTransactionHistory = ({ companyId, items }: ItemTransactionHist
         fetchTransactions();
     }, [selectedItemId, companyId]);
 
-    // Calculate the running stock level
+    // STEP 2: Calculate the running stock level (this still requires ASC order)
     const transactionsWithRunningStock = transactions.reduce((acc, current) => {
         const lastStock = acc.length > 0 ? acc[acc.length - 1].runningStock : 0;
+        // Calculation: last stock + current quantity
         const runningStock = lastStock + current.quantity;
-        acc.push({ ...current, runningStock });
+        acc.push({ runningStock, ...current });
         return acc;
     }, [] as (Transaction & { runningStock: number })[]);
+
+    // STEP 3: Reverse the array for DESCENDING display (newest on top)
+    const reversedTransactions = [...transactionsWithRunningStock].reverse();
 
 
     const renderTransactionType = (type: string) => {
         let colorClass = "bg-gray-100 text-gray-800";
-        if (["restock", "returns", "add_new"].includes(type)) {
+        if (["shipment", "restock", "returns", "add_new"].includes(type)) {
             colorClass = "bg-green-100 text-green-800";
-        } else if (["shipment", "order", "damaged_goods", "sample", "correction"].includes(type)) {
+        } else if (["order", "damaged_goods", "sample", "correction"].includes(type)) {
             colorClass = "bg-red-100 text-red-800";
         }
         return <Badge className={`capitalize ${colorClass}`}>{type.replace(/_/g, ' ')}</Badge>;
@@ -106,9 +112,9 @@ export const ItemTransactionHistory = ({ companyId, items }: ItemTransactionHist
             <div className="mt-6 border rounded-lg overflow-hidden">
                 {selectedItemId && loadingTransactions ? (
                     <div className="p-6 text-center text-gray-500">Loading transactions...</div>
-                ) : selectedItemId && transactions.length === 0 && !loadingTransactions ? (
+                ) : selectedItemId && reversedTransactions.length === 0 && !loadingTransactions ? (
                     <div className="p-6 text-center text-gray-500">No transactions found for this item.</div>
-                ) : selectedItemId && transactions.length > 0 ? (
+                ) : selectedItemId && reversedTransactions.length > 0 ? (
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -120,12 +126,13 @@ export const ItemTransactionHistory = ({ companyId, items }: ItemTransactionHist
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactionsWithRunningStock.map((tx) => (
+                            {/* Map over the REVERSED array */}
+                            {reversedTransactions.map((tx) => (
                                 <TableRow key={tx.id}>
                                     <TableCell>{format(new Date(tx.created_at), 'MMM dd, yyyy HH:mm')}</TableCell>
                                     <TableCell>{renderTransactionType(tx.transaction_type)}</TableCell>
-                                    <TableCell className={`text-right font-medium ${tx.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {tx.quantity > 0 ? `+${tx.quantity}` : tx.quantity}
+                                    <TableCell className={`text-right font-medium ${tx.quantity >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {tx.quantity >= 0 ? `+${tx.quantity}` : tx.quantity}
                                     </TableCell>
                                     <TableCell className="text-right font-bold">{tx.runningStock}</TableCell>
                                     <TableCell>
@@ -137,8 +144,14 @@ export const ItemTransactionHistory = ({ companyId, items }: ItemTransactionHist
                         </TableBody>
                     </Table>
                 ) : (
-                    <div className="p-6 text-center text-gray-500">Select an item above to view its transaction history.</div>
-                )}
+                    <div className="p-10 text-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 mt-8">
+                        <p className="text-xl font-semibold text-gray-600">
+                            Select an inventory item above to see transaction history.
+                        </p>
+                        <p className="text-sm text-gray-400 mt-2">
+                            The report details will appear here once an item is chosen.
+                        </p>
+                    </div>)}
             </div>
         </div>
     );

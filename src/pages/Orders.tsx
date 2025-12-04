@@ -31,6 +31,10 @@ export interface Order {
   recipientName?: string;
   recipientEmail?: string;
   recipientPhone?: string;
+  scheduledDate?: string;
+  carrier?: string
+  trackingNumber?: string;
+  notes?: string
 }
 
 const Orders = () => {

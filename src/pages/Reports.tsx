@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/AppHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ItemTransactionHistory } from "@/components/reports/ItemTransactionHistory";
+import { CustomerOrderHistory } from "@/components/reports/CustomerOrderHistory";
+import { StockValuationSummary } from "@/components/reports/StockValuationSummary";
 import { toast } from "sonner";
 
 interface ReportInventoryItem {
@@ -91,14 +93,34 @@ const Reports = () => {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="orders">
-                        {/* Future Report: Customer Order History */}
-                        <p className="p-4 border rounded-lg">Customer Order History report coming soon.</p>
+                    <TabsContent value="orders" className="space-y-4 pt-4">
+                        <div className="p-4 border rounded-lg bg-card shadow">
+                            <h2 className="text-xl font-semibold mb-4">Customer Sales Performance</h2>
+                            {loading ? (
+                                <p>Loading...</p>
+                            ) : companyId ? (
+                                <CustomerOrderHistory
+                                    companyId={companyId}
+                                />
+                            ) : (
+                                <p>Please log in to view reports.</p>
+                            )}
+                        </div>
                     </TabsContent>
 
-                    <TabsContent value="valuation">
-                        {/* Future Report: Stock Valuation Summary */}
-                        <p className="p-4 border rounded-lg">Stock Valuation Summary report coming soon.</p>
+                    <TabsContent value="valuation" className="space-y-4 pt-4">
+                        <div className="p-4 border rounded-lg bg-card shadow">
+                            <h2 className="text-xl font-semibold mb-4">Current Stock Valuation</h2>
+                            {loading ? (
+                                <p>Loading...</p>
+                            ) : companyId ? (
+                                <StockValuationSummary
+                                    companyId={companyId}
+                                />
+                            ) : (
+                                <p>Please log in to view reports.</p>
+                            )}
+                        </div>
                     </TabsContent>
                 </Tabs>
             </main>

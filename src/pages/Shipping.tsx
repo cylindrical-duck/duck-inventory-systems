@@ -236,17 +236,11 @@ const Shipping = () => {
               company_id: companyId,
               inventory_item_id: inventoryItem.id,
               transaction_type: "shipment",
-              quantity: -orderItem.quantity,
+              quantity: 0,
               reference_id: shipmentId,
               reference_type: "shipment",
               notes: `Shipped for order`,
             });
-
-          // Update inventory quantity
-          await supabase
-            .from("inventory_items")
-            .update({ quantity: inventoryItem.quantity - orderItem.quantity })
-            .eq("id", inventoryItem.id);
         }
       }
     } catch (error) {

@@ -13,9 +13,9 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg">
                 <img
-                  src="/duck-inventory-systems/logos/logo-stack-3.png"
+                  src="/duck-inventory-systems/logos/stackable-logo-2.png"
                   alt="Stackable Logo"
                   className="h-full w-full object-cover"
                 />

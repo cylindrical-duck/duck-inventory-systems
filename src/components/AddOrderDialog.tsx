@@ -25,6 +25,7 @@ import { useCustomFields } from "@/hooks/useCustomFields";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useBranding } from "../context/BrandingContext";
+import { Textarea } from "@/components/ui/textarea"; // Import Textarea for notes
 
 interface AddOrderDialogProps {
   open: boolean;
@@ -49,6 +50,19 @@ interface Customer {
   address: string;
 }
 
+// Update ShippingInfo to match Shipment schema fields
+interface ShippingInfo {
+  recipientName: string;
+  recipientEmail: string;
+  recipientPhone: string;
+  shippingAddress: string;
+  scheduledDate: string; // New: Scheduled Date for shipment
+  carrier: string; // New: Shipping Carrier
+  trackingNumber: string; // New: Tracking Number
+  notes: string; // New: Shipment Notes
+}
+
+
 const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
   const { primaryColor, accentColor } = useBranding();
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -69,11 +83,15 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     availableQty: number;
   }>>([]);
   const [needsShipping, setNeedsShipping] = useState(false);
-  const [shippingInfo, setShippingInfo] = useState({
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({ // Use updated ShippingInfo interface
     recipientName: "",
     recipientEmail: "",
     recipientPhone: "",
     shippingAddress: "",
+    scheduledDate: new Date().toISOString().split('T')[0], // Default to today
+    carrier: "",
+    trackingNumber: "",
+    notes: "",
   });
   const [customData, setCustomData] = useState<Record<string, any>>({});
 
@@ -187,7 +205,16 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     setContactInfo({ name: "", email: "", phone: "" });
     setOrderItems([]);
     setNeedsShipping(false);
-    setShippingInfo({ recipientName: "", recipientEmail: "", recipientPhone: "", shippingAddress: "" });
+    setShippingInfo({
+      recipientName: "",
+      recipientEmail: "",
+      recipientPhone: "",
+      shippingAddress: "",
+      scheduledDate: new Date().toISOString().split('T')[0], // Reset scheduled date
+      carrier: "",
+      trackingNumber: "",
+      notes: "",
+    });
     setCustomData({});
     setSelectedCustomerId(null);
   };
@@ -260,9 +287,15 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
     const totalAmount = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const orderNumber = `ORD-${Date.now()}`;
 
-    if (needsShipping && !shippingInfo.shippingAddress) {
-      toast.error("Please enter a shipping address");
-      return;
+    if (needsShipping) {
+      if (!shippingInfo.shippingAddress) {
+        toast.error("Please enter a shipping address");
+        return;
+      }
+      if (!shippingInfo.scheduledDate) {
+        toast.error("Please select a scheduled shipping date");
+        return;
+      }
     }
 
     const newOrder: Order = {
@@ -286,6 +319,10 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
       recipientName: needsShipping ? (shippingInfo.recipientName || contactInfo.name) : undefined,
       recipientEmail: needsShipping ? (shippingInfo.recipientEmail || contactInfo.email) : undefined,
       recipientPhone: needsShipping ? (shippingInfo.recipientPhone || contactInfo.phone) : undefined,
+      scheduledDate: needsShipping ? shippingInfo.scheduledDate : undefined,
+      carrier: needsShipping ? shippingInfo.carrier : undefined,
+      trackingNumber: needsShipping ? shippingInfo.trackingNumber : undefined,
+      notes: needsShipping ? shippingInfo.notes : undefined,
     };
 
     onAdd(newOrder, customData);
@@ -510,6 +547,8 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
             {needsShipping && (
               <div className="space-y-4 pl-4 border-l-2">
                 <h4 className="text-sm font-medium">Shipping Information</h4>
+
+                {/* Shipping Address */}
                 <div className="space-y-2">
                   <Label htmlFor="shippingAddress">Shipping Address *</Label>
                   <Input
@@ -520,6 +559,8 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
                     required={needsShipping}
                   />
                 </div>
+
+                {/* Recipient Name/Email */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="recipientName">Recipient Name</Label>
@@ -541,6 +582,8 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
                     />
                   </div>
                 </div>
+
+                {/* Recipient Phone */}
                 <div className="space-y-2">
                   <Label htmlFor="recipientPhone">Recipient Phone</Label>
                   <Input
@@ -549,6 +592,50 @@ const AddOrderDialog = ({ open, onOpenChange, onAdd }: AddOrderDialogProps) => {
                     value={shippingInfo.recipientPhone}
                     onChange={(e) => setShippingInfo({ ...shippingInfo, recipientPhone: e.target.value })}
                     placeholder="Leave empty to use customer phone"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledDate">Scheduled Shipping Date *</Label>
+                  <Input
+                    id="scheduledDate"
+                    type="date"
+                    value={shippingInfo.scheduledDate}
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, scheduledDate: e.target.value })}
+                    required={needsShipping}
+                  />
+                </div>
+
+                {/* NEW FIELD: Carrier and Tracking Number */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="carrier">Carrier</Label>
+                    <Input
+                      id="carrier"
+                      value={shippingInfo.carrier}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, carrier: e.target.value })}
+                      placeholder="e.g., FedEx, USPS"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="trackingNumber">Tracking Number</Label>
+                    <Input
+                      id="trackingNumber"
+                      value={shippingInfo.trackingNumber}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, trackingNumber: e.target.value })}
+                      placeholder="Optional tracking number"
+                    />
+                  </div>
+                </div>
+
+                {/* NEW FIELD: Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={shippingInfo.notes}
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, notes: e.target.value })}
+                    placeholder="Any special instructions or internal notes"
                   />
                 </div>
               </div>
