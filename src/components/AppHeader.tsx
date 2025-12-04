@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,8 +9,10 @@ import {
     TrendingUp,
     UsersRound,
     Users,
-    PanelLeftOpen,
-    ChartColumnBig
+    Menu,
+    X,
+    ChartColumnBig,
+    ChevronRight
 } from "lucide-react";
 import { useBranding } from "../context/BrandingContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +35,33 @@ export const AppHeader = ({
 }: AppHeaderProps) => {
     const navigate = useNavigate();
     const { primaryColor } = useBranding();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    // Handle scroll effect for the top bar transparency/blur
+    // useEffect(() => {
+    //     const handleScroll = () => {
+    //         setIsScrolled(window.scrollY > 10);
+    //     };
+    //     window.addEventListener("scroll", handleScroll);
+    //     return () => window.removeEventListener("scroll", handleScroll);
+    // }, []);
+
+    useEffect(() => {
+        let last = window.scrollY;
+
+        const handleScroll = () => {
+            const y = window.scrollY;
+
+            if (!isScrolled && y > 40) setIsScrolled(true);       // scroll down buffer
+            else if (isScrolled && y < 10) setIsScrolled(false);  // scroll up buffer
+
+            last = y;
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [isScrolled]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -47,81 +77,145 @@ export const AppHeader = ({
         { key: "properties", label: "Properties", icon: Settings, path: "/properties" },
         { key: "team", label: "Team", icon: UsersRound, path: "/teammanagement" },
         { key: "reports", label: "Reports", icon: ChartColumnBig, path: "/reports" },
-
     ];
 
-    return (
-        <header className="border-b border-border bg-card shadow-[var(--shadow-soft)]">
-            <div className="container mx-auto px-4 py-6">
-                <div className="flex items-center justify-between">
+    const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-                    <div className="flex-shrink-0">
-                        <h1
-                            className="text-2xl font-bold bg-clip-text text-transparent"
-                            style={{
-                                backgroundImage: `linear-gradient(to right, var(--company-primary), var(--company-accent), var(--company-primary))`,
-                            }}
+    return (
+        <>
+            {/* --- TOP HEADER BAR --- */}
+            <header
+                className={`sticky top-0 z-40 transition-all duration-300 border-b ${isScrolled
+                    ? "bg-background/80 backdrop-blur-md border-border shadow-sm py-3"
+                    : "bg-background border-transparent py-5"
+                    }`}
+            >
+                <div className="container mx-auto px-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        {/* Menu Trigger Button */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={toggleMenu}
+                            className="hover:bg-accent hover:text-accent-foreground rounded-full"
                         >
-                            {companyName} {pageTitle}
-                        </h1>
-                        <p className="text-muted-foreground mt-2">
-                            {pageSubtitle}
-                        </p>
+                            <Menu className="h-6 w-6" />
+                            <span className="sr-only">Open menu</span>
+                        </Button>
+
+                        {/* Breadcrumb / Title Area */}
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-muted-foreground hidden sm:inline-block">
+                                    {companyName}
+                                </span>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                                <h1
+                                    className="text-xl font-bold tracking-tight bg-clip-text text-transparent"
+                                    style={{
+                                        backgroundImage: `linear-gradient(to right, var(--company-primary), var(--company-accent), var(--company-primary))`,
+                                    }}
+                                >
+                                    {pageTitle}
+                                </h1>
+                            </div>
+                            {!isScrolled && (
+                                <p
+                                    className={`text-xs text-muted-foreground hidden md:block transition-all duration-300 ${isScrolled ? "opacity-0 translate-y-1 h-0 overflow-hidden" : "opacity-100 translate-y-0 h-auto"
+                                        }`}
+                                >
+                                    {pageSubtitle}
+                                </p>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-3 ml-auto">
-
-                        <div
-                            className="group relative flex items-center gap-1 rounded-full py-3 px-2 transition-all duration-300 bg-background hover:bg-muted"
-                        >
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="flex-shrink-0 rounded-full"
-                            >
-                                <PanelLeftOpen
-                                    className="h-5 w-5"
-                                    style={{ color: primaryColor }}
-                                />
-                            </Button>
-
-                            <div
-                                className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-3 pr-1 py-4 pl-4 
-                           w-0 opacity-0 group-hover:w-max group-hover:opacity-100 transition-all duration-300 ease-in-out overflow-hidden 
-                           bg-background group-hover:bg-muted rounded-full z-10"
-                            >
-                                {navItems.map((item) => (
-                                    <Button
-                                        key={item.key}
-                                        variant={activePage === item.key ? "secondary" : "outline"}
-                                        onClick={() => navigate(item.path)}
-                                        className="gap-2 flex-shrink-0"
-                                    >
-                                        <item.icon
-                                            className="h-4 w-4"
-                                            style={{ color: primaryColor }}
-                                        />
-                                        {item.label}
-                                    </Button>
-                                ))}
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleLogout}
-                                    className="gap-2 flex-shrink-0"
-                                >
-                                    <LogOut className="h-4 w-4" />
-                                    Logout
-                                </Button>
-                                <div className="w-14 flex-shrink-0"></div>
-                            </div>
-                        </div>
-
-                        <div className="flex-shrink-0">
-                            {children}
-                        </div>
+                    {/* Right Side Actions (Children) */}
+                    <div className="flex items-center gap-3">
+                        {children}
                     </div>
                 </div>
-            </div>
-        </header>
+            </header>
+
+            {/* --- NAVIGATION DRAWER (SIDE PANEL) --- */}
+
+            {/* Backdrop */}
+            <div
+                className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity duration-300 ${isMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                    }`}
+                onClick={() => setIsMenuOpen(false)}
+            />
+
+            {/* Slide-out Panel */}
+            <aside
+                className={`fixed top-0 left-0 bottom-0 w-[280px] bg-card border-r border-border z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isMenuOpen ? "translate-x-0" : "-translate-x-full"
+                    }`}
+            >
+                {/* Drawer Header */}
+                <div className="p-6 border-b border-border flex items-center justify-between">
+                    <span
+                        className="text-lg font-bold"
+                        style={{ color: primaryColor }}
+                    >
+                        Navigation
+                    </span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="rounded-full h-8 w-8"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+
+                {/* Navigation Items */}
+                <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+                    {navItems.map((item) => {
+                        const isActive = activePage === item.key;
+                        return (
+                            <button
+                                key={item.key}
+                                onClick={() => {
+                                    navigate(item.path);
+                                    setIsMenuOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 group relative overflow-hidden ${isActive
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                    }`}
+                            >
+                                {/* Active Indicator Bar */}
+                                {isActive && (
+                                    <span
+                                        className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full"
+                                        style={{ backgroundColor: primaryColor }}
+                                    />
+                                )}
+
+                                <item.icon
+                                    className={`h-5 w-5 transition-colors ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                                        }`}
+                                    style={isActive ? { color: primaryColor } : {}}
+                                />
+                                {item.label}
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                {/* Drawer Footer */}
+                <div className="p-4 border-t border-border bg-muted/20">
+                    <Button
+                        variant="ghost"
+                        onClick={handleLogout}
+                        className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    >
+                        <LogOut className="h-5 w-5" />
+                        Log Out
+                    </Button>
+                </div>
+            </aside>
+        </>
     );
 };
